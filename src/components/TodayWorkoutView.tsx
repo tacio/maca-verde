@@ -1,21 +1,28 @@
 import React, { useState } from 'react';
-import { Play, Flame, Award, ShieldAlert, Sparkles, Plus, Clock, Zap, Target, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Play, Flame, Award, ShieldAlert, Sparkles, Plus, Clock, Zap, Target, CheckCircle2, Brain, AlertTriangle, ShieldCheck, HeartPulse } from 'lucide-react';
 import { WorkoutRoutine, UserFitnessProfile, DailyOverloadChallenge } from '../types/fitness';
+import { MoodLogEntry, HALTState } from '../types/mood';
 import { EXERCISES } from '../data/exercises';
 import { OverloadEngine } from '../services/overloadEngine';
 
 interface TodayWorkoutViewProps {
   profile: UserFitnessProfile;
   routines: WorkoutRoutine[];
+  latestMood: MoodLogEntry | null;
   onStartWorkout: (routine: WorkoutRoutine) => void;
   onOpenCustomBuilder: () => void;
+  onOpenMoodModal: (initialHalt?: Partial<HALTState>) => void;
+  onOpenDrillModal: (elevatedPulse?: boolean) => void;
 }
 
 export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
   profile,
   routines,
+  latestMood,
   onStartWorkout,
-  onOpenCustomBuilder
+  onOpenCustomBuilder,
+  onOpenMoodModal,
+  onOpenDrillModal
 }) => {
   const dailyChallenge: DailyOverloadChallenge = OverloadEngine.getDailyChallenge(profile);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string>(dailyChallenge.routineId || routines[0].id);
@@ -23,23 +30,21 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
   const selectedRoutine = routines.find(r => r.id === selectedRoutineId) || routines[0];
   const scaledRoutine = OverloadEngine.scaleRoutineForUser(selectedRoutine, profile);
 
-  const formatSecs = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const remainder = sec % 60;
-    return `${mins}m ${remainder > 0 ? remainder + 's' : ''}`;
-  };
-
   const isTodayCompleted = profile.lastCompletedDate === new Date().toISOString().split('T')[0];
+
+  const isHaltTriggered = latestMood?.halt && (
+    latestMood.halt.hungry || latestMood.halt.angry || latestMood.halt.lonely || latestMood.halt.tired
+  );
 
   return (
     <div className="space-y-6">
-      {/* Daily Motivation & +1% Micro-Overload Banner */}
+      {/* UNIFIED DUAL GLASS PANE: Physical + Emotional Command Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-950/80 via-slate-900 to-slate-950 border border-brand-500/30 p-5 md:p-6 shadow-2xl">
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
 
+        {/* Top Badges */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          {/* Streak Flame Badge */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-950/80 border border-orange-500/40 text-orange-400 font-black text-sm shadow-inner">
               <Flame className="w-5 h-5 fill-current animate-pulse-fast text-orange-400" />
               <span>{profile.currentStreak} DAY STREAK</span>
@@ -52,14 +57,76 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
 
             {isTodayCompleted && (
               <span className="flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-950/70 border border-emerald-800 px-2.5 py-1 rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5" /> TODAY'S HABIT COMPLETE
+                <CheckCircle2 className="w-3.5 h-3.5" /> WORKOUT DONE
               </span>
             )}
           </div>
 
-          <div className="text-xs text-slate-400 font-medium">
-            Best Streak: <span className="text-white font-bold">{profile.bestStreak} days</span>
+          {/* Quick Mind-Body Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onOpenMoodModal()}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center gap-1.5"
+            >
+              <Brain className="w-3.5 h-3.5 text-brand-400" />
+              <span>{latestMood ? 'Update Mood' : 'Check-in Mood'}</span>
+            </button>
+            <button
+              onClick={() => onOpenDrillModal(false)}
+              className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-xs font-bold text-indigo-300 transition flex items-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Pulse Pause Drill</span>
+            </button>
           </div>
+        </div>
+
+        {/* EMOTIONAL & HALT RADAR (Single Glass Pane) */}
+        <div className="mb-4 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <HeartPulse className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-300">
+                Emotional Control & H.A.L.T. Radar
+              </span>
+            </div>
+
+            {latestMood ? (
+              <span className="text-xs font-bold text-slate-300 capitalize">
+                State: <span className="text-brand-300">{latestMood.valence}</span> (Energy: {latestMood.energyLevel}/5)
+              </span>
+            ) : (
+              <span className="text-xs text-slate-400">Baseline not logged today</span>
+            )}
+          </div>
+
+          {isHaltTriggered ? (
+            <div className="mt-2.5 p-2.5 rounded-lg bg-amber-950/50 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>
+                  <strong>H.A.L.T. Shield:</strong> You are{' '}
+                  {[
+                    latestMood?.halt.hungry && 'Hungry 🍎',
+                    latestMood?.halt.angry && 'Upset ⚡',
+                    latestMood?.halt.lonely && 'Lonely 👤',
+                    latestMood?.halt.tired && 'Tired 🥱'
+                  ].filter(Boolean).join(', ')}. <em>Count to 5 before speaking.</em>
+                </span>
+              </div>
+              <button
+                onClick={() => onOpenDrillModal(false)}
+                className="text-[11px] font-bold underline text-amber-300 hover:text-white shrink-0"
+              >
+                Practice 10s Pause →
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Prefrontal inhibition supported. Remember: <em>Raise your heart rate to strengthen your emotional brake.</em></span>
+            </div>
+          )}
         </div>
 
         {/* The +1% Challenge of the Day */}
@@ -67,7 +134,7 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-brand-400" />
             <span className="text-xs font-black tracking-wider uppercase text-brand-400">
-              TODAY'S +1% PROGRESSIVE OVERLOAD MISSION
+              TODAY'S +1% PHYSICAL & MENTAL OVERLOAD MISSION
             </span>
           </div>
           <h2 className="text-lg md:text-xl font-extrabold text-white">

@@ -363,7 +363,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           </h3>
 
           {/* CRITICAL TEXT NECK POSTURE COACHING CALLOUT */}
-          {currentExercise.textNeckCue && (
+          {currentExercise.textNeckCue && phase === 'work' && (
             <div className="mt-3 p-3.5 bg-brand-950/40 border border-brand-500/30 rounded-xl text-left flex items-start gap-3">
               <ShieldAlert className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
               <div>
@@ -372,6 +372,21 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
                 </span>
                 <p className="text-sm font-medium text-slate-200 leading-snug">
                   {currentExercise.textNeckCue}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* HIGH PULSE EMOTIONAL CONTROL & VAGAL BRAKE CUE (During Rest) */}
+          {(phase === 'rest' || phase === 'roundRest') && (
+            <div className="mt-3 p-3.5 bg-indigo-950/40 border border-indigo-500/40 rounded-xl text-left flex items-start gap-3">
+              <span className="text-xl">🧠</span>
+              <div>
+                <span className="text-xs font-black tracking-wide uppercase text-indigo-400 block mb-0.5">
+                  HIGH-PULSE EMOTIONAL CONTROL DRILL
+                </span>
+                <p className="text-sm font-medium text-slate-200 leading-snug">
+                  Your pulse is pounding. <strong>Unclench your jaw. Drop shoulders.</strong> Double inhale through nose, slow exhale through mouth. Notice the adrenaline urge — this is the exact stillness you must practice when tired, hungry, or upset before speaking.
                 </p>
               </div>
             </div>

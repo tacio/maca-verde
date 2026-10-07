@@ -17,6 +17,7 @@ interface WorkoutCompleteModalProps {
   onSaveLog: (entry: Omit<WorkoutLogEntry, 'id' | 'timestamp'>) => void;
   onDismiss: () => void;
   onTriggerDriveBackup?: () => void;
+  onTriggerEmotionalDrill?: () => void;
 }
 
 export const WorkoutCompleteModal: React.FC<WorkoutCompleteModalProps> = ({
@@ -25,7 +26,8 @@ export const WorkoutCompleteModal: React.FC<WorkoutCompleteModalProps> = ({
   profile,
   onSaveLog,
   onDismiss,
-  onTriggerDriveBackup
+  onTriggerDriveBackup,
+  onTriggerEmotionalDrill
 }) => {
   const [rpe, setRpe] = useState<number>(7);
   const [neckDiscomfort, setNeckDiscomfort] = useState<number>(2);
@@ -208,13 +210,26 @@ export const WorkoutCompleteModal: React.FC<WorkoutCompleteModalProps> = ({
             <CheckCircle className="w-5 h-5" /> Save Workout & Advance Streak 🔥
           </button>
 
+          {/* Direct Bridge to High-Heart-Rate Emotional Drill */}
+          <button
+            onClick={() => {
+              handleSave();
+              if (onTriggerEmotionalDrill) {
+                onTriggerEmotionalDrill();
+              }
+            }}
+            className="w-full py-2.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-indigo-200 text-xs font-bold transition flex items-center justify-center gap-2"
+          >
+            <span className="text-sm">🫀</span> Save & Do 30s High-Pulse Emotional Pause Drill
+          </button>
+
           {profile.googleDrive.clientId && onTriggerDriveBackup && (
             <button
               onClick={() => {
                 handleSave();
                 onTriggerDriveBackup();
               }}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center justify-center gap-2"
+              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center justify-center gap-2"
             >
               <Cloud className="w-4 h-4 text-blue-400" /> Save & Backup to Google Drive
             </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Dumbbell, Calendar, Cloud, Volume2, VolumeX, Plus, Sparkles, Trophy } from 'lucide-react';
+import { Flame, Dumbbell, Calendar, Cloud, Volume2, VolumeX, Plus, Sparkles, Brain, AlertTriangle, ShieldCheck, HeartPulse } from 'lucide-react';
 import { UserFitnessProfile, WorkoutLogEntry, WorkoutRoutine } from './types/fitness';
+import { MoodLogEntry, EmotionalControlDrillLog, HALTState } from './types/mood';
 import { StorageService } from './services/storageService';
 import { OverloadEngine } from './services/overloadEngine';
 import { soundService } from './services/soundService';
@@ -11,13 +12,19 @@ import { ExerciseLibraryView } from './components/ExerciseLibraryView';
 import { ProgressAnalyticsView } from './components/ProgressAnalyticsView';
 import { DataBackupView } from './components/DataBackupView';
 import { CustomRoutineModal } from './components/CustomRoutineModal';
+import { MoodTrackerModal } from './components/MoodTrackerModal';
+import { ThinkBeforeSpeakDrill } from './components/ThinkBeforeSpeakDrill';
+import { MoodAndMindView } from './components/MoodAndMindView';
 import { GoogleDriveService } from './services/googleDriveService';
 
 export const App: React.FC = () => {
   const [profile, setProfile] = useState<UserFitnessProfile>(StorageService.getProfile());
   const [logs, setLogs] = useState<WorkoutLogEntry[]>(StorageService.getLogs());
   const [routines, setRoutines] = useState<WorkoutRoutine[]>(StorageService.getAllRoutines());
-  const [activeTab, setActiveTab] = useState<'today' | 'library' | 'progress' | 'backup'>('today');
+  const [moodLogs, setMoodLogs] = useState<MoodLogEntry[]>(StorageService.getMoodLogs());
+  const [emotionalDrills, setEmotionalDrills] = useState<EmotionalControlDrillLog[]>(StorageService.getEmotionalDrills());
+
+  const [activeTab, setActiveTab] = useState<'today' | 'mind' | 'library' | 'progress' | 'backup'>('today');
 
   // Active workout execution
   const [activeWorkoutRoutine, setActiveWorkoutRoutine] = useState<WorkoutRoutine | null>(null);
@@ -30,14 +37,20 @@ export const App: React.FC = () => {
     deadHangSecondsEstimated: number;
   } | null>(null);
 
-  // Custom routine builder
+  // Modals
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
+  const [showMoodModal, setShowMoodModal] = useState(false);
+  const [initialMoodHalt, setInitialMoodHalt] = useState<Partial<HALTState> | undefined>(undefined);
+  const [showDrillModal, setShowDrillModal] = useState(false);
+  const [drillElevatedPulse, setDrillElevatedPulse] = useState(false);
 
   // Refresh data from storage
   const reloadData = () => {
     setProfile(StorageService.getProfile());
     setLogs(StorageService.getLogs());
     setRoutines(StorageService.getAllRoutines());
+    setMoodLogs(StorageService.getMoodLogs());
+    setEmotionalDrills(StorageService.getEmotionalDrills());
   };
 
   useEffect(() => {
@@ -99,7 +112,6 @@ export const App: React.FC = () => {
       totalActiveSeconds: profile.totalActiveSeconds + entryData.durationSeconds,
       totalCaloriesBurned: profile.totalCaloriesBurned + entryData.estimatedCalories,
       totalRopeJumps: profile.totalRopeJumps + (entryData.jumpRopeTurns || 0),
-      // Progressive overload level & multiplier
       overloadMultiplier: Number(Math.min(1.4, profile.overloadMultiplier + (entryData.rpeRating >= 8 ? 0.02 : 0.01)).toFixed(2)),
       level: Math.min(10, Math.floor((profile.totalWorkouts + 1) / 5) + 1),
       personalRecords: {
@@ -123,6 +135,28 @@ export const App: React.FC = () => {
     }
   };
 
+  // Save Mood entry
+  const handleSaveMood = (moodData: Omit<MoodLogEntry, 'id' | 'timestamp'>) => {
+    const newMood: MoodLogEntry = {
+      ...moodData,
+      id: `mood-${Date.now()}`,
+      timestamp: Date.now()
+    };
+    const updated = StorageService.addMoodLog(newMood);
+    setMoodLogs(updated);
+  };
+
+  // Save Emotional Control Drill
+  const handleCompleteEmotionalDrill = (drillData: Omit<EmotionalControlDrillLog, 'id' | 'timestamp'>) => {
+    const newDrill: EmotionalControlDrillLog = {
+      ...drillData,
+      id: `drill-${Date.now()}`,
+      timestamp: Date.now()
+    };
+    const updated = StorageService.addEmotionalDrill(newDrill);
+    setEmotionalDrills(updated);
+  };
+
   // Save custom routine
   const handleSaveCustomRoutine = (newRoutine: WorkoutRoutine) => {
     const existing = StorageService.getCustomRoutines();
@@ -130,6 +164,11 @@ export const App: React.FC = () => {
     StorageService.saveCustomRoutines(updated);
     setRoutines(StorageService.getAllRoutines());
   };
+
+  const latestMood = moodLogs.length > 0 ? moodLogs[0] : null;
+  const isHaltTriggered = latestMood?.halt && (
+    latestMood.halt.hungry || latestMood.halt.angry || latestMood.halt.lonely || latestMood.halt.tired
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
@@ -141,21 +180,48 @@ export const App: React.FC = () => {
             <span className="text-2xl drop-shadow-md">🍏</span>
             <div>
               <h1 className="font-black text-base md:text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-300 bg-clip-text text-transparent">
-                MAÇÃ VERDE <span className="text-brand-400 font-mono text-xs">FITNESS</span>
+                MAÇÃ VERDE <span className="text-brand-400 font-mono text-xs">FITNESS & MOOD</span>
               </h1>
               <p className="text-[10px] text-slate-400 font-semibold tracking-wide">
-                Daily HIIT • Posture Overload • Jump Rope & Door Bar
+                HIIT Overload • Posture Antidote • Emotional Control Under Stress
               </p>
             </div>
           </div>
 
-          {/* Quick Streak & Controls */}
+          {/* Quick Streak & Dual Mind-Body Indicators */}
           <div className="flex items-center space-x-2 md:space-x-3">
             {/* Streak Counter */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-950/60 border border-orange-500/40 text-orange-400 text-xs font-black shadow-inner">
               <Flame className="w-4 h-4 fill-current text-orange-400" />
               <span>{profile.currentStreak}d</span>
             </div>
+
+            {/* HALT Status Quick Shield */}
+            {isHaltTriggered ? (
+              <button
+                onClick={() => {
+                  setDrillElevatedPulse(false);
+                  setShowDrillModal(true);
+                }}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/40 text-amber-300 text-xs font-bold transition hover:bg-amber-900/60"
+                title="Biological buffer low! Tap to activate 5s speech pause"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                <span>HALT Shield Active</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setInitialMoodHalt(undefined);
+                  setShowMoodModal(true);
+                }}
+                className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-semibold hover:border-slate-700"
+                title="Tap to check-in mood"
+              >
+                <Brain className="w-3.5 h-3.5 text-brand-400" />
+                <span>{latestMood ? `Mood: ${latestMood.valence}` : 'Check-in Mood'}</span>
+              </button>
+            )}
 
             {/* Sound Button */}
             <button
@@ -171,7 +237,7 @@ export const App: React.FC = () => {
             {/* Voice Coach Toggle */}
             <button
               onClick={handleToggleVoice}
-              className={`hidden sm:flex px-2.5 py-1 rounded-lg border text-[11px] font-bold transition items-center gap-1 ${
+              className={`hidden md:flex px-2.5 py-1 rounded-lg border text-[11px] font-bold transition items-center gap-1 ${
                 profile.voiceCoachEnabled ? 'bg-brand-500/15 border-brand-500/40 text-brand-300' : 'bg-slate-950 border-slate-800 text-slate-500'
               }`}
               title="Toggle Spoken Voice Coach"
@@ -193,7 +259,18 @@ export const App: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Sparkles className="w-4 h-4" /> Today's Workout
+            <Sparkles className="w-4 h-4" /> Today's Habit
+          </button>
+
+          <button
+            onClick={() => setActiveTab('mind')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black tracking-wide uppercase transition flex items-center gap-2 shrink-0 ${
+              activeTab === 'mind'
+                ? 'bg-brand-500 text-slate-950 shadow-md shadow-brand-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Brain className="w-4 h-4" /> Mind & Emotional Control
           </button>
 
           <button
@@ -237,8 +314,32 @@ export const App: React.FC = () => {
           <TodayWorkoutView
             profile={profile}
             routines={routines}
+            latestMood={latestMood}
             onStartWorkout={handleStartWorkout}
             onOpenCustomBuilder={() => setShowCustomBuilder(true)}
+            onOpenMoodModal={(initial) => {
+              setInitialMoodHalt(initial);
+              setShowMoodModal(true);
+            }}
+            onOpenDrillModal={(elevated) => {
+              setDrillElevatedPulse(elevated ?? false);
+              setShowDrillModal(true);
+            }}
+          />
+        )}
+
+        {activeTab === 'mind' && (
+          <MoodAndMindView
+            moodLogs={moodLogs}
+            drills={emotionalDrills}
+            onOpenMoodModal={(initial) => {
+              setInitialMoodHalt(initial);
+              setShowMoodModal(true);
+            }}
+            onOpenDrillModal={(elevated) => {
+              setDrillElevatedPulse(elevated ?? false);
+              setShowDrillModal(true);
+            }}
           />
         )}
 
@@ -250,6 +351,7 @@ export const App: React.FC = () => {
           <ProgressAnalyticsView
             profile={profile}
             logs={logs}
+            moodLogs={moodLogs}
           />
         )}
 
@@ -291,6 +393,10 @@ export const App: React.FC = () => {
               GoogleDriveService.backupToDrive(profile.googleDrive.clientId);
             }
           }}
+          onTriggerEmotionalDrill={() => {
+            setDrillElevatedPulse(true);
+            setShowDrillModal(true);
+          }}
         />
       )}
 
@@ -302,9 +408,27 @@ export const App: React.FC = () => {
         />
       )}
 
+      {/* Mood Tracker Modal */}
+      {showMoodModal && (
+        <MoodTrackerModal
+          onSaveMood={handleSaveMood}
+          onClose={() => setShowMoodModal(false)}
+          initialHalt={initialMoodHalt}
+        />
+      )}
+
+      {/* Think Before You Speak / High-Pulse Emotional Control Drill */}
+      {showDrillModal && (
+        <ThinkBeforeSpeakDrill
+          onCompleteDrill={handleCompleteEmotionalDrill}
+          onClose={() => setShowDrillModal(false)}
+          initialHeartRateElevated={drillElevatedPulse}
+        />
+      )}
+
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950/80 py-4 px-4 text-center text-xs text-slate-500">
-        Maçã Verde Fitness • 100% Local Data Privacy • Tested HIIT for Posture & Metabolic Fat Burn
+        Maçã Verde Fitness & Mood • 100% Local Data Privacy • Tested HIIT for Posture, Belly Fat, & Prefrontal Emotional Control
       </footer>
     </div>
   );
