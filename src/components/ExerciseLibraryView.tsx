@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
-import { Search, ShieldAlert, Flame, Heart, Sparkles, Dumbbell } from 'lucide-react';
-import { EXERCISE_LIST } from '../data/exercises';
-import { Exercise, GoalTarget, EquipmentType } from '../types/fitness';
+import { Search, ShieldAlert, Dumbbell } from 'lucide-react';
+import { EquipmentType, GoalTarget } from '../types/fitness';
+import { Language, TRANSLATIONS } from '../i18n/translations';
+import { getLocalizedExercises } from '../data/localizedData';
 
-export const ExerciseLibraryView: React.FC = () => {
+interface ExerciseLibraryViewProps {
+  language?: Language;
+}
+
+export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({ language = 'pt-BR' }) => {
+  const t = TRANSLATIONS[language];
+  const localizedExerciseMap = getLocalizedExercises(language);
+  const exerciseList = Object.values(localizedExerciseMap);
+
   const [search, setSearch] = useState('');
   const [filterGoal, setFilterGoal] = useState<string>('all');
   const [filterEquipment, setFilterEquipment] = useState<string>('all');
 
-  const filteredExercises = EXERCISE_LIST.filter(ex => {
+  const filteredExercises = exerciseList.filter(ex => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase()) ||
       ex.description.toLowerCase().includes(search.toLowerCase()) ||
       ex.targetMuscles.some(m => m.toLowerCase().includes(search.toLowerCase()));
@@ -20,9 +29,9 @@ export const ExerciseLibraryView: React.FC = () => {
   });
 
   const getEquipmentBadge = (eq: EquipmentType) => {
-    if (eq === 'door_bar') return { label: 'Door Pull-up Bar', color: 'bg-indigo-950 text-indigo-300 border-indigo-800' };
-    if (eq === 'rope') return { label: 'Jump Rope', color: 'bg-amber-950 text-amber-300 border-amber-800' };
-    return { label: 'Bodyweight', color: 'bg-slate-800 text-slate-300 border-slate-700' };
+    if (eq === 'door_bar') return { label: t.eqDoorBar, color: 'bg-indigo-950 text-indigo-300 border-indigo-800' };
+    if (eq === 'rope') return { label: t.eqRope, color: 'bg-amber-950 text-amber-300 border-amber-800' };
+    return { label: t.eqBodyweight, color: 'bg-slate-800 text-slate-300 border-slate-700' };
   };
 
   return (
@@ -31,10 +40,10 @@ export const ExerciseLibraryView: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
         <h2 className="text-2xl font-black text-white flex items-center gap-2">
           <Dumbbell className="w-6 h-6 text-brand-400" />
-          Technique & Posture Prescription Library
+          {t.libraryTitle}
         </h2>
         <p className="text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-          Master the biomechanics behind curing forward head posture ("text neck"), decompressing your thoracic spine, and accelerating visceral fat oxidation using only your fixed door bar and jump rope.
+          {t.librarySubtitle}
         </p>
 
         {/* Search & Filters */}
@@ -43,7 +52,7 @@ export const ExerciseLibraryView: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search exercise, muscle, or posture cue..."
+              placeholder={t.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500"
@@ -56,10 +65,10 @@ export const ExerciseLibraryView: React.FC = () => {
               onChange={(e) => setFilterGoal(e.target.value)}
               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-brand-500"
             >
-              <option value="all">All Goals</option>
-              <option value="posture">🛡️ Posture & Text Neck</option>
-              <option value="belly_fat">🔥 Belly Fat & Core</option>
-              <option value="cardio">⚡ Cardio Capacity</option>
+              <option value="all">{t.allGoals}</option>
+              <option value="posture">{t.goalPosture}</option>
+              <option value="belly_fat">{t.goalBellyFat}</option>
+              <option value="cardio">{t.goalCardio}</option>
             </select>
 
             <select
@@ -67,10 +76,10 @@ export const ExerciseLibraryView: React.FC = () => {
               onChange={(e) => setFilterEquipment(e.target.value)}
               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-brand-500"
             >
-              <option value="all">All Equipment</option>
-              <option value="door_bar">🚪 Fixed Door Bar</option>
-              <option value="rope">🪢 Jump Rope</option>
-              <option value="bodyweight">🧘 Bodyweight</option>
+              <option value="all">{t.allEquipment}</option>
+              <option value="door_bar">🚪 {t.eqDoorBar}</option>
+              <option value="rope">🪢 {t.eqRope}</option>
+              <option value="bodyweight">🧘 {t.eqBodyweight}</option>
             </select>
           </div>
         </div>
@@ -91,9 +100,9 @@ export const ExerciseLibraryView: React.FC = () => {
                     {eqBadge.label}
                   </span>
                   <div className="flex gap-1">
-                    {ex.targets.map(t => (
-                      <span key={t} className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 capitalize">
-                        {t.replace('_', ' ')}
+                    {ex.targets.map(tar => (
+                      <span key={tar} className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 capitalize">
+                        {tar.replace('_', ' ')}
                       </span>
                     ))}
                   </div>
@@ -108,7 +117,7 @@ export const ExerciseLibraryView: React.FC = () => {
                 {ex.textNeckCue && (
                   <div className="p-3 rounded-xl bg-brand-950/40 border border-brand-500/30 mb-3">
                     <span className="text-[10px] font-black uppercase tracking-wider text-brand-400 block mb-0.5 flex items-center gap-1">
-                      <ShieldAlert className="w-3.5 h-3.5" /> Text-Neck Posture Cue
+                      <ShieldAlert className="w-3.5 h-3.5" /> {t.postureCueTitle}
                     </span>
                     <p className="text-xs text-slate-200 font-medium">
                       {ex.textNeckCue}
@@ -119,11 +128,11 @@ export const ExerciseLibraryView: React.FC = () => {
                 {/* Biomechanical Benefits Accordion */}
                 <div className="space-y-1.5 text-xs text-slate-300 mb-4">
                   <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
-                    <span className="font-bold text-emerald-400">Posture Impact: </span>
+                    <span className="font-bold text-emerald-400">{t.postureImpact}: </span>
                     {ex.postureBenefit}
                   </div>
                   <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
-                    <span className="font-bold text-orange-400">Belly & Metabolic Impact: </span>
+                    <span className="font-bold text-orange-400">{t.bellyImpact}: </span>
                     {ex.bellyBurnBenefit}
                   </div>
                 </div>
@@ -131,7 +140,7 @@ export const ExerciseLibraryView: React.FC = () => {
                 {/* Step by Step execution */}
                 <div className="mb-4">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                    Execution Technique:
+                    {t.executionTechnique}:
                   </span>
                   <ul className="space-y-1">
                     {ex.formPoints.map((point, idx) => (

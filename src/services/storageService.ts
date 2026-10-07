@@ -29,6 +29,7 @@ const DEFAULT_PROFILE: UserFitnessProfile = {
   level: 1,
   soundEnabled: true,
   voiceCoachEnabled: true,
+  language: 'pt-BR',
   googleDrive: {
     clientId: '',
     autoBackupPrompt: true,

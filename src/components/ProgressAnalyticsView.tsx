@@ -1,15 +1,24 @@
 import React from 'react';
-import { Flame, Trophy, HeartPulse, Activity, Zap, Calendar, Clock, Award, TrendingDown, Brain, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Flame, Trophy, HeartPulse, Zap, Calendar, Clock, TrendingDown, Brain, ShieldCheck } from 'lucide-react';
 import { UserFitnessProfile, WorkoutLogEntry } from '../types/fitness';
 import { MoodLogEntry } from '../types/mood';
+import { Language, TRANSLATIONS } from '../i18n/translations';
 
 interface ProgressAnalyticsViewProps {
   profile: UserFitnessProfile;
   logs: WorkoutLogEntry[];
   moodLogs?: MoodLogEntry[];
+  language?: Language;
 }
 
-export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ profile, logs, moodLogs = [] }) => {
+export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({
+  profile,
+  logs,
+  moodLogs = [],
+  language = 'pt-BR'
+}) => {
+  const t = TRANSLATIONS[language];
+
   // Generate last 60 days for heatmap
   const getDaysArray = (numDays: number) => {
     const arr = [];
@@ -55,34 +64,44 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 text-xs font-bold text-orange-400 mb-1">
-            <Flame className="w-4 h-4" /> Current Streak
+            <Flame className="w-4 h-4" /> {t.currentStreakCard}
           </div>
-          <div className="text-3xl font-black text-white">{profile.currentStreak} Days</div>
-          <div className="text-[11px] text-slate-400 mt-1">Best: {profile.bestStreak} days</div>
+          <div className="text-3xl font-black text-white">
+            {profile.currentStreak} {language === 'pt-BR' ? 'Dias' : 'Days'}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            {t.bestStreak.replace('{count}', String(profile.bestStreak))}
+          </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 text-xs font-bold text-brand-400 mb-1">
-            <Clock className="w-4 h-4" /> Total Cardio Time
+            <Clock className="w-4 h-4" /> {t.totalCardioCard}
           </div>
           <div className="text-3xl font-black text-white">{formatTotalTime(profile.totalActiveSeconds)}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{profile.totalWorkouts} sessions total</div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            {profile.totalWorkouts} {language === 'pt-BR' ? 'sessões concluídas' : 'sessions total'}
+          </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 mb-1">
-            <HeartPulse className="w-4 h-4" /> Neck Tension Avg
+            <HeartPulse className="w-4 h-4" /> {t.neckTensionCard}
           </div>
           <div className="text-3xl font-black text-white">{avgNeckScore}/10</div>
-          <div className="text-[11px] text-slate-400 mt-1">Goal: ≤ 2 (relaxed spine)</div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            {language === 'pt-BR' ? 'Meta: ≤ 2 (coluna relaxada)' : 'Goal: ≤ 2 (relaxed spine)'}
+          </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center gap-2 text-xs font-bold text-indigo-400 mb-1">
-            <Brain className="w-4 h-4" /> Speech Filter Score
+            <Brain className="w-4 h-4" /> {t.speechScoreCard}
           </div>
           <div className="text-3xl font-black text-white">{avgSpeechRating}/5</div>
-          <div className="text-[11px] text-slate-400 mt-1">Self-Command & Pause</div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            {language === 'pt-BR' ? 'Autodomínio & Pausa' : 'Self-Command & Pause'}
+          </div>
         </div>
       </div>
 
@@ -92,10 +111,10 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Calendar className="w-4 h-4 text-brand-400" />
-              60-Day Habit & Daily Overload Heatmap
+              {t.heatmapTitle}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Every filled square represents your commitment to better posture, cardio, and discipline.
+              {t.heatmapSubtitle}
             </p>
           </div>
         </div>
@@ -113,7 +132,7 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
             return (
               <div
                 key={dateStr}
-                title={`${dateStr}: ${count} workout(s)`}
+                title={`${dateStr}: ${count} ${language === 'pt-BR' ? 'treino(s)' : 'workout(s)'}`}
                 className={`w-4 h-4 rounded-[3px] transition-all cursor-pointer ${bgClass} ${
                   isToday ? 'ring-2 ring-brand-300' : ''
                 }`}
@@ -123,15 +142,15 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
         </div>
 
         <div className="flex items-center justify-between mt-3 text-[11px] text-slate-400">
-          <span>60 days ago</span>
+          <span>{language === 'pt-BR' ? '60 dias atrás' : '60 days ago'}</span>
           <div className="flex items-center gap-1.5">
-            <span>Less</span>
+            <span>{language === 'pt-BR' ? 'Menos' : 'Less'}</span>
             <span className="w-3 h-3 rounded-[2px] bg-slate-800/60" />
             <span className="w-3 h-3 rounded-[2px] bg-brand-600" />
             <span className="w-3 h-3 rounded-[2px] bg-brand-400" />
-            <span>More</span>
+            <span>{language === 'pt-BR' ? 'Mais' : 'More'}</span>
           </div>
-          <span>Today</span>
+          <span>{language === 'pt-BR' ? 'Hoje' : 'Today'}</span>
         </div>
       </div>
 
@@ -142,27 +161,27 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
             <Brain className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Mind-Body Interconnection Analytics</h3>
-            <p className="text-xs text-slate-400">How physical decompression directly governs emotional self-command</p>
+            <h3 className="text-base font-bold text-white">{t.mindBodyAnalyticsTitle}</h3>
+            <p className="text-xs text-slate-400">{t.mindBodyAnalyticsSubtitle}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80">
             <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4" /> The Posture-Irritability Link
+              <ShieldCheck className="w-4 h-4" /> {t.postureIrritabilityLinkTitle}
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              When forward head posture ("text neck") strains the cervicocranial junction, blood flow to the brain is restricted and sympathetic stress hormones remain elevated. Users report a <strong>40% drop in angry reactivity</strong> on days they complete door bar hangs.
+              {t.postureIrritabilityLinkText}
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80">
             <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1 flex items-center gap-1.5">
-              <Zap className="w-4 h-4" /> Vagal Brake Inoculation
+              <Zap className="w-4 h-4" /> {t.vagalBrakeInoculationTitle}
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Practicing the 10-second silence pause while heart rate is spiked (140+ bpm) trains the prefrontal cortex to withhold impulsive speech. Over 30 days, thinking before speaking becomes an automated biological reflex even when tired or hungry.
+              {t.vagalBrakeInoculationText}
             </p>
           </div>
         </div>
@@ -175,17 +194,19 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-bold text-white text-sm flex items-center gap-2">
               <HeartPulse className="w-4 h-4 text-emerald-400" />
-              Text-Neck Tension Trajectory
+              {language === 'pt-BR' ? 'Trajetória de Tensão no Pescoço Tech' : 'Text-Neck Tension Trajectory'}
             </h4>
             <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-0.5">
-              <TrendingDown className="w-3.5 h-3.5" /> Posture Progress
+              <TrendingDown className="w-3.5 h-3.5" /> {language === 'pt-BR' ? 'Progresso Postural' : 'Posture Progress'}
             </span>
           </div>
           <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-            By consistently pairing door bar decompression hangs with chin tucks and scapular retractions, your cervical vertebrae decompress and deep neck flexors strengthen.
+            {language === 'pt-BR'
+              ? 'Ao unir descompressão na barra de porta com retração cervical (chin tuck) e remadas escapulares, suas vértebras se soltam e os flexores profundos se fortalecem.'
+              : 'By consistently pairing door bar decompression hangs with chin tucks and scapular retractions, your cervical vertebrae decompress and deep neck flexors strengthen.'}
           </p>
 
-          {/* Simple Sparkline Representation */}
+          {/* Sparkline Representation */}
           <div className="h-20 flex items-end gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
             {logs.slice(0, 12).reverse().map((l, idx) => {
               const heightPct = Math.max(10, (l.neckDiscomfortScore / 10) * 100);
@@ -196,7 +217,7 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
                       l.neckDiscomfortScore <= 3 ? 'bg-emerald-500' : 'bg-amber-500'
                     }`}
                     style={{ height: `${heightPct}%` }}
-                    title={`${l.date}: Tension ${l.neckDiscomfortScore}/10`}
+                    title={`${l.date}: ${l.neckDiscomfortScore}/10`}
                   />
                   <span className="text-[9px] text-slate-500 font-mono">{l.neckDiscomfortScore}</span>
                 </div>
@@ -204,7 +225,7 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
             })}
             {logs.length === 0 && (
               <div className="text-xs text-slate-500 m-auto">
-                Complete your first workout to track posture tension reduction!
+                {language === 'pt-BR' ? 'Complete seu primeiro treino para registrar o alívio!' : 'Complete your first workout to track posture tension reduction!'}
               </div>
             )}
           </div>
@@ -214,33 +235,33 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 mb-3">
             <Zap className="w-4 h-4 text-orange-400" />
-            Equipment Overload Records
+            {language === 'pt-BR' ? 'Recordes de Equipamento & Sobrecarga' : 'Equipment Overload Records'}
           </h4>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80">
               <div>
-                <span className="text-xs font-bold text-slate-200 block">Door Bar Continuous Hang</span>
-                <span className="text-[11px] text-slate-400">Current Personal Best</span>
+                <span className="text-xs font-bold text-slate-200 block">{t.doorBarPb}</span>
+                <span className="text-[11px] text-slate-400">{language === 'pt-BR' ? 'Recorde Pessoal Atual' : 'Current Personal Best'}</span>
               </div>
               <span className="text-base font-black font-mono text-brand-400">
-                {profile.personalRecords.maxDeadHangSeconds} seconds
+                {profile.personalRecords.maxDeadHangSeconds}s
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80">
               <div>
-                <span className="text-xs font-bold text-slate-200 block">Jump Rope Turns in Session</span>
-                <span className="text-[11px] text-slate-400">Max Cadence Volume</span>
+                <span className="text-xs font-bold text-slate-200 block">{t.ropeTurnsPb}</span>
+                <span className="text-[11px] text-slate-400">{language === 'pt-BR' ? 'Volume de Cadência Máximo' : 'Max Cadence Volume'}</span>
               </div>
               <span className="text-base font-black font-mono text-amber-400">
-                {profile.personalRecords.maxSingleSetRopeJumps} turns
+                {profile.personalRecords.maxSingleSetRopeJumps} {language === 'pt-BR' ? 'giros' : 'turns'}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80">
               <div>
-                <span className="text-xs font-bold text-slate-200 block">Total Visceral Fat Burn Estimate</span>
-                <span className="text-[11px] text-slate-400">HIIT Metabolic EPOC</span>
+                <span className="text-xs font-bold text-slate-200 block">{t.visceralBurnPb}</span>
+                <span className="text-[11px] text-slate-400">{language === 'pt-BR' ? 'Efeito Pós-Combustão EPOC' : 'HIIT Metabolic EPOC'}</span>
               </div>
               <span className="text-base font-black font-mono text-orange-400">
                 ~{profile.totalCaloriesBurned} kcal
@@ -253,12 +274,12 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
       {/* Historical Workout Logs */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
         <h3 className="text-base font-bold text-white mb-4">
-          Session History ({logs.length} Completed)
+          {t.sessionHistoryTitle.replace('{count}', String(logs.length))}
         </h3>
 
         {logs.length === 0 ? (
           <div className="text-center py-10 text-slate-400 text-sm">
-            No workouts logged yet. Smash your first session today to ignite your streak!
+            {t.noSessionsLogged}
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -277,14 +298,14 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
                   <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
                     <span>{log.date}</span>
                     <span>•</span>
-                    <span>{Math.round(log.durationSeconds / 60)} mins</span>
+                    <span>{Math.round(log.durationSeconds / 60)} min</span>
                     <span>•</span>
                     <span>~{log.estimatedCalories} kcal</span>
                     <span>•</span>
                     <span>RPE: {log.rpeRating}/10</span>
                     <span>•</span>
                     <span className={log.neckDiscomfortScore <= 3 ? 'text-emerald-400' : 'text-amber-400'}>
-                      Neck Tension: {log.neckDiscomfortScore}/10
+                      {language === 'pt-BR' ? 'Tensão Cervical' : 'Neck Tension'}: {log.neckDiscomfortScore}/10
                     </span>
                   </div>
                   {log.overloadNotes && (
@@ -297,12 +318,12 @@ export const ProgressAnalyticsView: React.FC<ProgressAnalyticsViewProps> = ({ pr
                 <div className="mt-2 sm:mt-0 text-right">
                   {log.jumpRopeTurns ? (
                     <span className="text-[11px] font-mono text-amber-300 block">
-                      ⚡ {log.jumpRopeTurns} rope turns
+                      ⚡ {log.jumpRopeTurns} {language === 'pt-BR' ? 'giros' : 'turns'}
                     </span>
                   ) : null}
                   {log.deadHangSeconds ? (
                     <span className="text-[11px] font-mono text-brand-300 block">
-                      🚪 {log.deadHangSeconds}s hang
+                      🚪 {log.deadHangSeconds}s {language === 'pt-BR' ? 'barra' : 'hang'}
                     </span>
                   ) : null}
                 </div>

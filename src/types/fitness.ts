@@ -85,6 +85,7 @@ export interface UserFitnessProfile {
   level: number;
   soundEnabled: boolean;
   voiceCoachEnabled: boolean;
+  language: 'en' | 'pt-BR';
   googleDrive: {
     clientId: string;
     lastSyncedIso?: string;

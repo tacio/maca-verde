@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Play, Flame, Award, ShieldAlert, Sparkles, Plus, Clock, Zap, Target, CheckCircle2, Brain, AlertTriangle, ShieldCheck, HeartPulse } from 'lucide-react';
 import { WorkoutRoutine, UserFitnessProfile, DailyOverloadChallenge } from '../types/fitness';
 import { MoodLogEntry, HALTState } from '../types/mood';
-import { EXERCISES } from '../data/exercises';
 import { OverloadEngine } from '../services/overloadEngine';
+import { getLocalizedExercises } from '../data/localizedData';
+import { TRANSLATIONS } from '../i18n/translations';
 
 interface TodayWorkoutViewProps {
   profile: UserFitnessProfile;
@@ -24,6 +25,10 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
   onOpenMoodModal,
   onOpenDrillModal
 }) => {
+  const lang = profile.language || 'pt-BR';
+  const t = TRANSLATIONS[lang];
+  const localizedExercises = getLocalizedExercises(lang);
+
   const dailyChallenge: DailyOverloadChallenge = OverloadEngine.getDailyChallenge(profile);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string>(dailyChallenge.routineId || routines[0].id);
 
@@ -36,6 +41,16 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
     latestMood.halt.hungry || latestMood.halt.angry || latestMood.halt.lonely || latestMood.halt.tired
   );
 
+  const getHaltReasons = () => {
+    if (!latestMood?.halt) return '';
+    const reasons: string[] = [];
+    if (latestMood.halt.hungry) reasons.push(lang === 'pt-BR' ? 'Fome 🍎' : 'Hungry 🍎');
+    if (latestMood.halt.angry) reasons.push(lang === 'pt-BR' ? 'Irritação ⚡' : 'Upset ⚡');
+    if (latestMood.halt.lonely) reasons.push(lang === 'pt-BR' ? 'Solidão 👤' : 'Lonely 👤');
+    if (latestMood.halt.tired) reasons.push(lang === 'pt-BR' ? 'Cansaço 🥱' : 'Tired 🥱');
+    return reasons.join(', ');
+  };
+
   return (
     <div className="space-y-6">
       {/* UNIFIED DUAL GLASS PANE: Physical + Emotional Command Banner */}
@@ -47,17 +62,17 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-950/80 border border-orange-500/40 text-orange-400 font-black text-sm shadow-inner">
               <Flame className="w-5 h-5 fill-current animate-pulse-fast text-orange-400" />
-              <span>{profile.currentStreak} DAY STREAK</span>
+              <span>{t.streakLabel.replace('{count}', String(profile.currentStreak))}</span>
             </div>
 
             <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-semibold text-slate-300">
               <Award className="w-4 h-4 text-brand-400" />
-              <span>LVL {profile.level} ATHLETE</span>
+              <span>{t.athleteLevel.replace('{level}', String(profile.level))}</span>
             </div>
 
             {isTodayCompleted && (
               <span className="flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-950/70 border border-emerald-800 px-2.5 py-1 rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5" /> WORKOUT DONE
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t.todayHabitDone}
               </span>
             )}
           </div>
@@ -69,14 +84,14 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
               className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center gap-1.5"
             >
               <Brain className="w-3.5 h-3.5 text-brand-400" />
-              <span>{latestMood ? 'Update Mood' : 'Check-in Mood'}</span>
+              <span>{latestMood ? t.updateMoodBtn : t.checkinMoodBtn}</span>
             </button>
             <button
               onClick={() => onOpenDrillModal(false)}
               className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-xs font-bold text-indigo-300 transition flex items-center gap-1.5"
             >
               <Zap className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Pulse Pause Drill</span>
+              <span>{t.pulsePauseDrillBtn}</span>
             </button>
           </div>
         </div>
@@ -87,16 +102,16 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
             <div className="flex items-center gap-2">
               <HeartPulse className="w-4 h-4 text-emerald-400" />
               <span className="text-xs font-black uppercase tracking-wider text-slate-300">
-                Emotional Control & H.A.L.T. Radar
+                {t.emotionalRadarTitle}
               </span>
             </div>
 
             {latestMood ? (
               <span className="text-xs font-bold text-slate-300 capitalize">
-                State: <span className="text-brand-300">{latestMood.valence}</span> (Energy: {latestMood.energyLevel}/5)
+                {t.currentState}: <span className="text-brand-300">{latestMood.valence}</span> (⚡ {latestMood.energyLevel}/5)
               </span>
             ) : (
-              <span className="text-xs text-slate-400">Baseline not logged today</span>
+              <span className="text-xs text-slate-400">{t.noCheckinToday}</span>
             )}
           </div>
 
@@ -105,26 +120,20 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>
-                  <strong>H.A.L.T. Shield:</strong> You are{' '}
-                  {[
-                    latestMood?.halt.hungry && 'Hungry 🍎',
-                    latestMood?.halt.angry && 'Upset ⚡',
-                    latestMood?.halt.lonely && 'Lonely 👤',
-                    latestMood?.halt.tired && 'Tired 🥱'
-                  ].filter(Boolean).join(', ')}. <em>Count to 5 before speaking.</em>
+                  {t.haltAlertActive.replace('{reasons}', getHaltReasons())}
                 </span>
               </div>
               <button
                 onClick={() => onOpenDrillModal(false)}
                 className="text-[11px] font-bold underline text-amber-300 hover:text-white shrink-0"
               >
-                Practice 10s Pause →
+                {t.practicePauseLink}
               </button>
             </div>
           ) : (
             <div className="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Prefrontal inhibition supported. Remember: <em>Raise your heart rate to strengthen your emotional brake.</em></span>
+              <span>{t.haltShieldClear}</span>
             </div>
           )}
         </div>
@@ -134,7 +143,7 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-brand-400" />
             <span className="text-xs font-black tracking-wider uppercase text-brand-400">
-              TODAY'S +1% PHYSICAL & MENTAL OVERLOAD MISSION
+              {t.todayMissionTitle}
             </span>
           </div>
           <h2 className="text-lg md:text-xl font-extrabold text-white">
@@ -158,13 +167,13 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Target className="w-4 h-4 text-brand-400" /> Choose Today's Protocol
+            <Target className="w-4 h-4 text-brand-400" /> {t.chooseProtocol}
           </h3>
           <button
             onClick={onOpenCustomBuilder}
             className="text-xs font-semibold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition"
           >
-            <Plus className="w-3.5 h-3.5" /> Build Custom Routine
+            <Plus className="w-3.5 h-3.5" /> {t.buildCustomRoutine}
           </button>
         </div>
 
@@ -183,7 +192,7 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
               >
                 {routine.isDailyRecommended && (
                   <span className="absolute top-3 right-3 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-brand-500 text-slate-950 font-mono">
-                    RECOMMENDED
+                    {t.recommended}
                   </span>
                 )}
 
@@ -220,7 +229,9 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
                 {scaledRoutine.primaryGoal.replace('_', ' ')}
               </span>
               <span className="text-xs text-slate-400">
-                {scaledRoutine.rounds} Rounds • {scaledRoutine.exercises.length} Exercises per Round
+                {t.roundCount
+                  .replace('{rounds}', String(scaledRoutine.rounds))
+                  .replace('{count}', String(scaledRoutine.exercises.length))}
               </span>
             </div>
             <h3 className="text-2xl font-black text-white">{scaledRoutine.title}</h3>
@@ -233,18 +244,18 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
             className="w-full sm:w-auto px-8 py-4 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 font-black text-base tracking-wide uppercase shadow-lg shadow-brand-500/20 active:scale-95 transition flex items-center justify-center gap-2 group"
           >
             <Play className="w-5 h-5 fill-current group-hover:scale-110 transition-transform" />
-            <span>START WORKOUT NOW</span>
+            <span>{t.startWorkoutNow}</span>
           </button>
         </div>
 
         {/* Exercises Sequence Breakdown */}
         <div>
           <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3">
-            Intervals Breakdown (Micro-Overload Adjusted)
+            {t.intervalsBreakdown}
           </h4>
           <div className="space-y-2">
             {scaledRoutine.exercises.map((item, idx) => {
-              const ex = EXERCISES[item.exerciseId];
+              const ex = localizedExercises[item.exerciseId];
               if (!ex) return null;
               return (
                 <div
@@ -259,7 +270,7 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-slate-200">{ex.name}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                          {ex.equipment === 'door_bar' ? '🚪 Door Bar' : ex.equipment === 'rope' ? '⚡ Rope' : '🧘 Bodyweight'}
+                          {ex.equipment === 'door_bar' ? (lang === 'pt-BR' ? '🚪 Barra de Porta' : '🚪 Door Bar') : ex.equipment === 'rope' ? (lang === 'pt-BR' ? '⚡ Corda' : '⚡ Rope') : (lang === 'pt-BR' ? '🧘 Peso Corporal' : '🧘 Bodyweight')}
                         </span>
                       </div>
                       <p className="text-xs text-brand-400/90 font-medium">
@@ -270,7 +281,7 @@ export const TodayWorkoutView: React.FC<TodayWorkoutViewProps> = ({
 
                   <div className="text-right shrink-0">
                     <span className="text-xs font-mono font-bold text-white block">
-                      {item.workSeconds}s Work / {item.restSeconds}s Rest
+                      {t.workRestInterval.replace('{work}', String(item.workSeconds)).replace('{rest}', String(item.restSeconds))}
                     </span>
                     {item.targetIntensity && (
                       <span className="text-[10px] text-slate-400">{item.targetIntensity}</span>

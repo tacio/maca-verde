@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipForward, SkipBack, X, Volume2, VolumeX, ShieldAlert, Award, Sparkles } from 'lucide-react';
 import { WorkoutRoutine } from '../types/fitness';
-import { EXERCISES } from '../data/exercises';
 import { soundService } from '../services/soundService';
+import { Language, TRANSLATIONS } from '../i18n/translations';
+import { getLocalizedExercises } from '../data/localizedData';
 
 interface WorkoutPlayerHUDProps {
   routine: WorkoutRoutine;
+  language: Language;
   onFinishWorkout: (result: {
     durationSeconds: number;
     roundsCompleted: number;
@@ -25,6 +27,7 @@ type Phase = 'prep' | 'work' | 'rest' | 'roundRest' | 'finished';
 
 export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
   routine,
+  language,
   onFinishWorkout,
   onCancelWorkout,
   soundEnabled,
@@ -32,6 +35,9 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
   onToggleSound,
   onToggleVoice
 }) => {
+  const t = TRANSLATIONS[language];
+  const localizedExercises = getLocalizedExercises(language);
+
   const [currentRound, setCurrentRound] = useState(1);
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>('prep');
@@ -44,11 +50,11 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
   const [totalRopeSeconds, setTotalRopeSeconds] = useState(0);
 
   const currentExerciseItem = routine.exercises[exerciseIndex];
-  const currentExercise = EXERCISES[currentExerciseItem?.exerciseId] || {
+  const currentExercise = localizedExercises[currentExerciseItem?.exerciseId] || {
     id: 'unknown',
     name: 'Exercise',
     equipment: 'bodyweight',
-    textNeckCue: 'Keep neck aligned and breathe deeply.',
+    textNeckCue: '',
     targetMuscles: []
   };
 
@@ -57,7 +63,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
     : currentRound < routine.rounds
       ? routine.exercises[0]
       : null;
-  const nextExercise = nextExerciseItem ? EXERCISES[nextExerciseItem.exerciseId] : null;
+  const nextExercise = nextExerciseItem ? localizedExercises[nextExerciseItem.exerciseId] : null;
 
   const totalExercisesInRound = routine.exercises.length;
   const timerRef = useRef<number | null>(null);
@@ -73,8 +79,11 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
 
   // Initial speech announcement
   useEffect(() => {
-    soundService.speak(`Get ready for ${routine.title}. First up: ${currentExercise.name}`);
-  }, [routine.title, currentExercise.name]);
+    const welcome = language === 'pt-BR'
+      ? `Prepare-se para ${routine.title}. Primeiro: ${currentExercise.name}`
+      : `Get ready for ${routine.title}. First up: ${currentExercise.name}`;
+    soundService.speak(welcome, language);
+  }, [routine.title, currentExercise.name, language]);
 
   // Phase transition handler
   const transitionToNext = useCallback(() => {
@@ -82,7 +91,11 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
       setPhase('work');
       setTimeLeft(currentExerciseItem.workSeconds);
       soundService.playWorkStart();
-      soundService.speak(`Work! ${currentExercise.name}. ${currentExercise.textNeckCue ? currentExercise.textNeckCue : ''}`);
+      const cue = currentExercise.textNeckCue ? `. ${currentExercise.textNeckCue}` : '';
+      const prompt = language === 'pt-BR'
+        ? `Treine agora! ${currentExercise.name}${cue}`
+        : `Work! ${currentExercise.name}${cue}`;
+      soundService.speak(prompt, language);
     } else if (phase === 'work') {
       // Accumulate equipment stats
       if (currentExercise.equipment === 'door_bar' && currentExercise.id.includes('hang')) {
@@ -94,12 +107,14 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
 
       // Check if end of exercise
       if (exerciseIndex + 1 < totalExercisesInRound) {
-        // More exercises in current round
         setPhase('rest');
         setTimeLeft(currentExerciseItem.restSeconds);
         soundService.playRestStart();
         if (nextExercise) {
-          soundService.speak(`Rest. Next up: ${nextExercise.name}`);
+          const restPrompt = language === 'pt-BR'
+            ? `Descanse. A seguir: ${nextExercise.name}`
+            : `Rest. Next up: ${nextExercise.name}`;
+          soundService.speak(restPrompt, language);
         }
       } else {
         // Completed all exercises in current round
@@ -107,12 +122,18 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           setPhase('roundRest');
           setTimeLeft(routine.roundRestSeconds);
           soundService.playRestStart();
-          soundService.speak(`Round ${currentRound} complete! Take a breather.`);
+          const roundEndPrompt = language === 'pt-BR'
+            ? `Série ${currentRound} concluída! Respire fundo.`
+            : `Round ${currentRound} complete! Take a breather.`;
+          soundService.speak(roundEndPrompt, language);
         } else {
           // Entire routine completed!
           setPhase('finished');
           soundService.playVictory();
-          soundService.speak('Workout complete! Incredible effort today!');
+          const winPrompt = language === 'pt-BR'
+            ? 'Treino concluído com sucesso! Excelente esforço!'
+            : 'Workout complete! Incredible effort today!';
+          soundService.speak(winPrompt, language);
           const approxTurns = Math.round(totalRopeSeconds * 2.2);
           onFinishWorkout({
             durationSeconds: totalElapsedSeconds,
@@ -128,20 +149,26 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
       const nextIdx = exerciseIndex + 1;
       setExerciseIndex(nextIdx);
       const nextItem = routine.exercises[nextIdx];
-      const nextEx = EXERCISES[nextItem.exerciseId];
+      const nextEx = localizedExercises[nextItem.exerciseId];
       setPhase('work');
       setTimeLeft(nextItem.workSeconds);
       soundService.playWorkStart();
-      soundService.speak(`Work! ${nextEx?.name || 'Next exercise'}`);
+      const prompt = language === 'pt-BR'
+        ? `Treine agora! ${nextEx?.name || 'Próximo exercício'}`
+        : `Work! ${nextEx?.name || 'Next exercise'}`;
+      soundService.speak(prompt, language);
     } else if (phase === 'roundRest') {
       setCurrentRound(prev => prev + 1);
       setExerciseIndex(0);
       const firstItem = routine.exercises[0];
-      const firstEx = EXERCISES[firstItem.exerciseId];
+      const firstEx = localizedExercises[firstItem.exerciseId];
       setPhase('work');
       setTimeLeft(firstItem.workSeconds);
       soundService.playWorkStart();
-      soundService.speak(`Round ${currentRound + 1}! Let's go: ${firstEx?.name || 'Start'}`);
+      const prompt = language === 'pt-BR'
+        ? `Série ${currentRound + 1}! Vamos lá: ${firstEx?.name || 'Início'}`
+        : `Round ${currentRound + 1}! Let's go: ${firstEx?.name || 'Start'}`;
+      soundService.speak(prompt, language);
     }
   }, [
     phase,
@@ -155,6 +182,8 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
     totalRopeSeconds,
     totalHangSeconds,
     totalElapsedSeconds,
+    language,
+    localizedExercises,
     onFinishWorkout
   ]);
 
@@ -210,7 +239,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           badgeBg: 'bg-brand-500 text-slate-950',
           textAccent: 'text-brand-400',
           progressBar: 'bg-brand-500',
-          label: 'WORK NOW'
+          label: t.phaseWork
         };
       case 'rest':
         return {
@@ -218,7 +247,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           badgeBg: 'bg-blue-500 text-slate-950',
           textAccent: 'text-blue-400',
           progressBar: 'bg-blue-500',
-          label: 'REST & BREATHE'
+          label: t.phaseRest
         };
       case 'roundRest':
         return {
@@ -226,7 +255,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           badgeBg: 'bg-purple-500 text-slate-950',
           textAccent: 'text-purple-400',
           progressBar: 'bg-purple-500',
-          label: 'ROUND COMPLETE REST'
+          label: t.phaseRoundRest
         };
       case 'prep':
       default:
@@ -235,7 +264,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           badgeBg: 'bg-amber-400 text-slate-950',
           textAccent: 'text-amber-400',
           progressBar: 'bg-amber-400',
-          label: 'GET READY'
+          label: t.phasePrep
         };
     }
   };
@@ -262,9 +291,9 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
   };
 
   const getEquipmentIcon = (eq: string) => {
-    if (eq === 'door_bar') return '🚪 Door Pull-up Bar';
-    if (eq === 'rope') return '⚡ Jump Rope';
-    return '🧘 Bodyweight Mat';
+    if (eq === 'door_bar') return language === 'pt-BR' ? '🚪 Barra Fixa de Porta' : '🚪 Door Pull-up Bar';
+    if (eq === 'rope') return language === 'pt-BR' ? '⚡ Corda de Pular' : '⚡ Jump Rope';
+    return language === 'pt-BR' ? '🧘 Peso Corporal' : '🧘 Bodyweight Mat';
   };
 
   return (
@@ -276,7 +305,11 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           <div>
             <h2 className="font-bold text-sm md:text-base text-slate-200">{routine.title}</h2>
             <p className="text-xs text-slate-400">
-              Round {currentRound} of {routine.rounds} • Interval {exerciseIndex + 1} of {totalExercisesInRound}
+              {t.roundIndicator
+                .replace('{round}', String(currentRound))
+                .replace('{totalRounds}', String(routine.rounds))
+                .replace('{index}', String(exerciseIndex + 1))
+                .replace('{totalExercises}', String(totalExercisesInRound))}
             </p>
           </div>
         </div>
@@ -300,13 +333,13 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
             }`}
             title="Toggle Spoken Voice Coaching"
           >
-            {voiceCoachEnabled ? '🗣️ Voice On' : 'Voice Off'}
+            {voiceCoachEnabled ? `🗣️ ${t.voiceOn}` : t.voiceOff}
           </button>
 
           {/* Close / Quit */}
           <button
             onClick={() => {
-              if (window.confirm('Quit workout now? Your progress for this session will not be saved.')) {
+              if (window.confirm(t.quitPrompt)) {
                 onCancelWorkout();
               }
             }}
@@ -334,11 +367,11 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
               {timeLeft}
             </span>
             <span className="text-xs uppercase tracking-wider text-slate-400 font-medium mt-1">
-              Seconds Remaining
+              {t.secondsRemaining}
             </span>
           </div>
 
-          {/* Progress ring track simulation */}
+          {/* Progress ring track */}
           <div className="absolute inset-x-0 -bottom-6 w-72 md:w-96 mx-auto h-2 bg-slate-800 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-1000 ease-linear ${currentStyles.progressBar}`}
@@ -354,12 +387,12 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
               {getEquipmentIcon(currentExercise.equipment)}
             </span>
             <span className="text-xs text-brand-400 font-semibold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> Total Time: {formatTime(totalElapsedSeconds)}
+              <Sparkles className="w-3.5 h-3.5" /> {t.totalTime}: {formatTime(totalElapsedSeconds)}
             </span>
           </div>
 
           <h3 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2">
-            {phase === 'prep' ? `Up Next: ${currentExercise.name}` : currentExercise.name}
+            {phase === 'prep' ? `${t.nextUp} ${currentExercise.name}` : currentExercise.name}
           </h3>
 
           {/* CRITICAL TEXT NECK POSTURE COACHING CALLOUT */}
@@ -368,7 +401,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
               <ShieldAlert className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
               <div>
                 <span className="text-xs font-black tracking-wide uppercase text-brand-400 block mb-0.5">
-                  POSTURE & TEXT-NECK CUE
+                  {t.postureCueTitle}
                 </span>
                 <p className="text-sm font-medium text-slate-200 leading-snug">
                   {currentExercise.textNeckCue}
@@ -383,10 +416,10 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
               <span className="text-xl">🧠</span>
               <div>
                 <span className="text-xs font-black tracking-wide uppercase text-indigo-400 block mb-0.5">
-                  HIGH-PULSE EMOTIONAL CONTROL DRILL
+                  {t.highPulseCueTitle}
                 </span>
                 <p className="text-sm font-medium text-slate-200 leading-snug">
-                  Your pulse is pounding. <strong>Unclench your jaw. Drop shoulders.</strong> Double inhale through nose, slow exhale through mouth. Notice the adrenaline urge — this is the exact stillness you must practice when tired, hungry, or upset before speaking.
+                  {t.highPulseCueText}
                 </p>
               </div>
             </div>
@@ -395,7 +428,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
           {/* Form cues / cadence tip */}
           {currentExercise.cadenceTip && (
             <p className="mt-2 text-xs text-slate-400 italic">
-              ⚡ Cadence: {currentExercise.cadenceTip}
+              ⚡ {currentExercise.cadenceTip}
             </p>
           )}
         </div>
@@ -403,7 +436,7 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
         {/* Up Next Teaser */}
         {nextExercise && phase !== 'prep' && (
           <div className="mt-4 text-xs text-slate-400 flex items-center justify-center gap-2">
-            <span>Next up:</span>
+            <span>{t.nextUp}</span>
             <span className="font-semibold text-slate-200">{nextExercise.name}</span>
             <span className="text-slate-500">({getEquipmentIcon(nextExercise.equipment)})</span>
           </div>
@@ -431,11 +464,11 @@ export const WorkoutPlayerHUD: React.FC<WorkoutPlayerHUDProps> = ({
         >
           {isPaused ? (
             <>
-              <Play className="w-5 h-5 fill-current" /> Resume
+              <Play className="w-5 h-5 fill-current" /> {t.resume}
             </>
           ) : (
             <>
-              <Pause className="w-5 h-5" /> Pause
+              <Pause className="w-5 h-5" /> {t.pause}
             </>
           )}
         </button>

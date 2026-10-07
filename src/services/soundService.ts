@@ -149,13 +149,14 @@ class SoundService {
   }
 
   // Voice coach announcements using SpeechSynthesis
-  public speak(text: string) {
+  public speak(text: string, lang: 'en' | 'pt-BR' = 'pt-BR') {
     if (!this.voiceCoachEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
       return;
     }
     try {
       window.speechSynthesis.cancel(); // Stop prior speech
       const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang === 'pt-BR' ? 'pt-BR' : 'en-US';
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
       utterance.volume = 0.95;

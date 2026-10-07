@@ -1,7 +1,7 @@
 import { UserFitnessProfile, DailyOverloadChallenge, WorkoutRoutine } from '../types/fitness';
 import { WORKOUT_ROUTINES } from '../data/routines';
 
-const MOTIVATIONAL_QUOTES = [
+const MOTIVATIONAL_QUOTES_EN = [
   "One day or Day One. You decided today.",
   "Your spine supports your entire future. Chin tucked, shoulders back.",
   "Consistency beats intensity. Just 15 minutes today changes your posture forever.",
@@ -12,6 +12,17 @@ const MOTIVATIONAL_QUOTES = [
   "Posture is non-verbal power. Stand tall, tuck that chin, ignite your core."
 ];
 
+const MOTIVATIONAL_QUOTES_PT = [
+  "Ou é 'um dia' ou é o 'Dia Um'. Você decidiu hoje.",
+  "Sua coluna sustenta todo o seu futuro. Queixo recolhido, ombros para trás.",
+  "Consistência supera intensidade. Apenas 15 minutos hoje mudam sua postura para sempre.",
+  "Gordura visceral é queimada com choque metabólico, não com horas de tédio.",
+  "Cada segundo na barra fixa desconprime horas curvado no computador.",
+  "O segredo dos vencedores é fazer o que a maioria evita: comparecer todo santo dia.",
+  "Cada giro de corda fortalece seu coração. Mantenha o ar fluindo.",
+  "Postura é autoridade não-verbal. Peito aberto, queixo alinhado, abdômen de aço."
+];
+
 export class OverloadEngine {
   /**
    * Determine today's challenge based on streak and previous records
@@ -19,6 +30,8 @@ export class OverloadEngine {
   public static getDailyChallenge(profile: UserFitnessProfile): DailyOverloadChallenge {
     const todayStr = new Date().toISOString().split('T')[0];
     const dayNumber = Math.max(1, profile.currentStreak + 1);
+    const isPt = profile.language === 'pt-BR';
+    const quotes = isPt ? MOTIVATIONAL_QUOTES_PT : MOTIVATIONAL_QUOTES_EN;
 
     // Rotate challenge focus based on day number to balance Posture, Fat Burn, and Cardio
     const challengeTypeIndex = dayNumber % 3;
@@ -29,24 +42,36 @@ export class OverloadEngine {
       return {
         date: todayStr,
         dayNumber,
-        title: `Day ${dayNumber} Overload: Cervical & Thoracic Spine Decompression`,
-        description: `Hold your door bar dead hang with active chin tuck for at least ${targetHang}s during intervals.`,
+        title: isPt
+          ? `Dia ${dayNumber}: Descompressão Cervical & Torácica na Barra`
+          : `Day ${dayNumber} Overload: Cervical & Thoracic Spine Decompression`,
+        description: isPt
+          ? `Mantenha a suspensão na barra com queixo recolhido por pelo menos ${targetHang}s durante os intervalos.`
+          : `Hold your door bar dead hang with active chin tuck for at least ${targetHang}s during intervals.`,
         targetType: 'dead_hang',
-        bonusTarget: `Target: ${targetHang}s Dead Hang (Beat personal record of ${profile.personalRecords.maxDeadHangSeconds}s)`,
+        bonusTarget: isPt
+          ? `Meta: ${targetHang}s na Barra Fixa (Superar recorde de ${profile.personalRecords.maxDeadHangSeconds}s)`
+          : `Target: ${targetHang}s Dead Hang (Beat personal record of ${profile.personalRecords.maxDeadHangSeconds}s)`,
         routineId: 'posture-text-neck-antidote',
-        motivationalQuote: MOTIVATIONAL_QUOTES[dayNumber % MOTIVATIONAL_QUOTES.length]
+        motivationalQuote: quotes[dayNumber % quotes.length]
       };
     } else if (challengeTypeIndex === 2) {
       // Belly Fat / Tabata focus
       return {
         date: todayStr,
         dayNumber,
-        title: `Day ${dayNumber} Overload: Metabolic Tabata Afterburn`,
-        description: `Push for 100% maximum intensity in the 20s sprint intervals to trigger EPOC belly fat oxidation.`,
+        title: isPt
+          ? `Dia ${dayNumber}: Queima Metabólica Tabata Gordura Zero`
+          : `Day ${dayNumber} Overload: Metabolic Tabata Afterburn`,
+        description: isPt
+          ? `Entregue 100% de intensidade nos tiros de 20s para liberar catecolaminas e queimar gordura profunda.`
+          : `Push for 100% maximum intensity in the 20s sprint intervals to trigger EPOC belly fat oxidation.`,
         targetType: 'posture_focus',
-        bonusTarget: 'Achieve RPE 8+ and zero knee-drops during Hanging Knee-to-Chest',
+        bonusTarget: isPt
+          ? 'Alcançar RPE 8+ e não descer os joelhos na elevação na barra'
+          : 'Achieve RPE 8+ and zero knee-drops during Hanging Knee-to-Chest',
         routineId: 'tabata-belly-shred',
-        motivationalQuote: MOTIVATIONAL_QUOTES[dayNumber % MOTIVATIONAL_QUOTES.length]
+        motivationalQuote: quotes[dayNumber % quotes.length]
       };
     } else {
       // Cardio / Jump Rope focus
@@ -54,12 +79,18 @@ export class OverloadEngine {
       return {
         date: todayStr,
         dayNumber,
-        title: `Day ${dayNumber} Overload: Jump Rope Cardio Surge`,
-        description: `Accumulate ${targetJumps}+ total rope turns across the HIIT intervals with eyes locked forward at eye-level.`,
+        title: isPt
+          ? `Dia ${dayNumber}: Explosão Cardiorrespiratória na Corda`
+          : `Day ${dayNumber} Overload: Jump Rope Cardio Surge`,
+        description: isPt
+          ? `Acumule mais de ${targetJumps} giros totais mantendo a postura altiva e o olhar para frente.`
+          : `Accumulate ${targetJumps}+ total rope turns across the HIIT intervals with eyes locked forward at eye-level.`,
         targetType: 'jump_rope',
-        bonusTarget: `Target: ${targetJumps}+ rope turns without breaking posture`,
+        bonusTarget: isPt
+          ? `Meta: Mais de ${targetJumps} giros sem quebrar a postura`
+          : `Target: ${targetJumps}+ rope turns without breaking posture`,
         routineId: 'daily-adaptive-overload',
-        motivationalQuote: MOTIVATIONAL_QUOTES[dayNumber % MOTIVATIONAL_QUOTES.length]
+        motivationalQuote: quotes[dayNumber % quotes.length]
       };
     }
   }

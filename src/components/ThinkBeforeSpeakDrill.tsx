@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Flame, HeartPulse, Brain, Wind, CheckCircle2, AlertOctagon, RotateCcw, Volume2, ArrowRight } from 'lucide-react';
-import { EMOTIONAL_SCENARIOS, getRandomScenario } from '../data/emotionalScenarios';
+import { X, Flame, Brain, Wind, CheckCircle2, RotateCcw } from 'lucide-react';
 import { ProvocationScenario, EmotionalControlDrillLog } from '../types/mood';
 import { soundService } from '../services/soundService';
+import { Language, TRANSLATIONS } from '../i18n/translations';
+import { getRandomLocalizedScenario } from '../data/localizedData';
 
 interface ThinkBeforeSpeakDrillProps {
+  language?: Language;
   onCompleteDrill: (log: Omit<EmotionalControlDrillLog, 'id' | 'timestamp'>) => void;
   onClose: () => void;
   initialHeartRateElevated?: boolean;
@@ -13,16 +15,19 @@ interface ThinkBeforeSpeakDrillProps {
 type DrillStep = 'elevate' | 'freeze' | 'sigh' | 'scenario' | 'finished';
 
 export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
+  language = 'pt-BR',
   onCompleteDrill,
   onClose,
   initialHeartRateElevated = false
 }) => {
+  const t = TRANSLATIONS[language];
+
   const [step, setStep] = useState<DrillStep>(initialHeartRateElevated ? 'freeze' : 'elevate');
   const [elevateTimer, setElevateTimer] = useState(25);
   const [freezeTimer, setFreezeTimer] = useState(10);
   const [sighCycle, setSighCycle] = useState(1);
   const [sighPhase, setSighPhase] = useState<'inhale1' | 'inhale2' | 'exhale'>('inhale1');
-  const [scenario, setScenario] = useState<ProvocationScenario>(getRandomScenario());
+  const [scenario, setScenario] = useState<ProvocationScenario>(getRandomLocalizedScenario(language));
   const [impulseResisted, setImpulseResisted] = useState(true);
 
   // Step 1: Elevate Heart Rate Timer
@@ -30,26 +35,32 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
     if (step !== 'elevate') return;
     if (elevateTimer <= 0) {
       setStep('freeze');
-      soundService.speak('Freeze! Heart is racing. Unclench jaw. Absolute silence for 10 seconds.');
+      const msg = language === 'pt-BR'
+        ? 'Congele! Coração disparado. Destrave a mandíbula. Silêncio absoluto por 10 segundos.'
+        : 'Freeze! Heart is racing. Unclench jaw. Absolute silence for 10 seconds.';
+      soundService.speak(msg, language);
       return;
     }
 
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       setElevateTimer(prev => prev - 1);
     }, 1000);
-    return () => clearInterval(t);
-  }, [step, elevateTimer]);
+    return () => clearInterval(timer);
+  }, [step, elevateTimer, language]);
 
   // Step 2: Somatic Freeze & Silence Timer
   useEffect(() => {
     if (step !== 'freeze') return;
     if (freezeTimer <= 0) {
       setStep('sigh');
-      soundService.speak('Now engage physiological sigh: two quick inhales, one long slow exhale.');
+      const msg = language === 'pt-BR'
+        ? 'Agora execute o suspiro fisiológico: duas puxadas de ar pelo nariz e uma expiração longa pela boca.'
+        : 'Now engage physiological sigh: two quick inhales, one long slow exhale.';
+      soundService.speak(msg, language);
       return;
     }
 
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       setFreezeTimer(prev => {
         if (prev <= 4 && prev > 1) {
           soundService.playTone(440, 0.1, 'sine', 0.15);
@@ -57,8 +68,8 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(t);
-  }, [step, freezeTimer]);
+    return () => clearInterval(timer);
+  }, [step, freezeTimer, language]);
 
   // Step 3: Physiological Sigh cycles
   useEffect(() => {
@@ -77,13 +88,16 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
           setSighPhase('inhale1');
         } else {
           setStep('scenario');
-          soundService.speak('Prefrontal cortex online. Review the provocation scenario.');
+          const msg = language === 'pt-BR'
+            ? 'Córtex pré-frontal ativado. Analise o cenário de provocação.'
+            : 'Prefrontal cortex online. Review the provocation scenario.';
+          soundService.speak(msg, language);
         }
       }, 4000);
     }
 
     return () => clearTimeout(cycleTimer);
-  }, [step, sighPhase, sighCycle]);
+  }, [step, sighPhase, sighCycle, language]);
 
   const handleFinish = () => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -94,7 +108,9 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
       pauseSecondsAchieved: 10,
       scenarioId: scenario.id,
       impulseResisted,
-      reflection: `Rehearsed prefrontal response under elevated adrenaline.`
+      reflection: language === 'pt-BR'
+        ? 'Pausa pré-frontal treinada com adrenalina elevada.'
+        : 'Rehearsed prefrontal response under elevated adrenaline.'
     });
     onClose();
   };
@@ -109,8 +125,8 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
               <Brain className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-black text-white">High Heart Rate Emotional Control Drill</h2>
-              <p className="text-xs text-slate-400">Stress Inoculation • Neurovisceral Prefrontal Brake</p>
+              <h2 className="text-base font-black text-white">{t.drillTitle}</h2>
+              <p className="text-xs text-slate-400">{t.drillSubtitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-white transition">
@@ -126,11 +142,11 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
             </div>
             <div>
               <span className="text-xs font-black uppercase tracking-widest text-orange-400 block mb-1">
-                PHASE 1: SPIKE ADRENALINE
+                {t.phase1Title}
               </span>
-              <h3 className="text-2xl font-black text-white">Jump Rope or Burpees Sprint!</h3>
+              <h3 className="text-2xl font-black text-white">{t.phase1Heading}</h3>
               <p className="text-xs text-slate-300 max-w-md mx-auto mt-2 leading-relaxed">
-                Elevate your heart rate right now to simulate the fight-or-flight surge of feeling attacked, hungry, or exhausted.
+                {t.phase1Desc}
               </p>
             </div>
 
@@ -142,11 +158,14 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
               <button
                 onClick={() => {
                   setStep('freeze');
-                  soundService.speak('Freeze! Notice the racing heart. Silence for 10 seconds.');
+                  const msg = language === 'pt-BR'
+                    ? 'Congele! Coração disparado. Destrave a mandíbula. Silêncio absoluto por 10 segundos.'
+                    : 'Freeze! Heart is racing. Unclench jaw. Absolute silence for 10 seconds.';
+                  soundService.speak(msg, language);
                 }}
                 className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition"
               >
-                My Pulse Is Already Pounding (Skip to Freeze) →
+                {t.skipToFreezeBtn}
               </button>
             </div>
           </div>
@@ -157,21 +176,23 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
           <div className="text-center py-6 space-y-4">
             <div className="w-28 h-28 rounded-full bg-blue-950/60 border-4 border-blue-500/50 flex flex-col items-center justify-center mx-auto shadow-2xl">
               <span className="text-5xl font-mono font-black text-white">{freezeTimer}</span>
-              <span className="text-[10px] uppercase font-bold text-blue-300">Silence</span>
+              <span className="text-[10px] uppercase font-bold text-blue-300">
+                {language === 'pt-BR' ? 'Silêncio' : 'Silence'}
+              </span>
             </div>
 
             <div>
               <span className="text-xs font-black uppercase tracking-widest text-blue-400 block mb-1">
-                PHASE 2: THE INHIBITORY FREEZE
+                {t.phase2Title}
               </span>
-              <h3 className="text-2xl font-black text-white">Total Silence & Bodyscan</h3>
+              <h3 className="text-2xl font-black text-white">{t.phase2Heading}</h3>
               <p className="text-xs text-slate-300 max-w-md mx-auto mt-2 leading-relaxed">
-                Your heart is pounding. <strong>Do NOT speak or react.</strong> Unclench your jaw. Drop your shoulders down away from your ears. Notice the adrenaline without acting on it.
+                {t.phase2Desc}
               </p>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 max-w-sm mx-auto">
-              🧠 <em>Science:</em> By actively withholding reaction during elevated tachycardia, you strengthen synaptic inhibition in the prefrontal cortex.
+              🧠 <em>{t.phase2Science}</em>
             </div>
           </div>
         )}
@@ -191,21 +212,21 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
               >
                 <Wind className="w-8 h-8 text-brand-400 mb-1" />
                 <span className="text-xs font-black uppercase tracking-wider text-white">
-                  {sighPhase === 'inhale1' && 'Inhale Nose'}
-                  {sighPhase === 'inhale2' && '+ Snap Inhale'}
-                  {sighPhase === 'exhale' && 'Slow Mouth Exhale'}
+                  {sighPhase === 'inhale1' && t.inhaleNose}
+                  {sighPhase === 'inhale2' && t.snapInhale}
+                  {sighPhase === 'exhale' && t.slowExhale}
                 </span>
-                <span className="text-[10px] text-slate-400">Cycle {sighCycle}/3</span>
+                <span className="text-[10px] text-slate-400">{t.cycleCount.replace('{cycle}', String(sighCycle))}</span>
               </div>
             </div>
 
             <div>
               <span className="text-xs font-black uppercase tracking-widest text-brand-400 block mb-1">
-                PHASE 3: VAGAL BRAKE ACTIVATION
+                {t.phase3Title}
               </span>
-              <h3 className="text-xl font-black text-white">Double Inhale • Long Exhale</h3>
+              <h3 className="text-xl font-black text-white">{t.phase3Heading}</h3>
               <p className="text-xs text-slate-300 max-w-md mx-auto mt-2 leading-relaxed">
-                The fastest biological mechanism to immediately decelerate heart rate and engage parasympathetic control.
+                {t.phase3Desc}
               </p>
             </div>
           </div>
@@ -216,13 +237,13 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
           <div className="py-2 space-y-4">
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 mb-2 inline-block">
-                Simulated Trigger ({scenario.category.toUpperCase()})
+                {language === 'pt-BR' ? 'Gatilho Simulado' : 'Simulated Trigger'} ({scenario.category.toUpperCase()})
               </span>
               <h4 className="text-sm font-bold text-white mb-2 leading-snug">
                 "{scenario.situation}"
               </h4>
               <p className="text-xs text-slate-400 italic">
-                ⚠️ Somatic Warning: {scenario.somaticWarning}
+                ⚠️ {language === 'pt-BR' ? 'Aviso Somático' : 'Somatic Warning'}: {scenario.somaticWarning}
               </p>
             </div>
 
@@ -230,7 +251,7 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3.5 rounded-xl bg-red-950/30 border border-red-500/30 text-xs">
                 <span className="text-[11px] font-black uppercase text-red-400 block mb-1 flex items-center gap-1">
-                  ❌ Impulsive Reaction
+                  {t.impulsiveReactionLabel}
                 </span>
                 <p className="text-slate-300 font-medium italic">
                   {scenario.impulsiveReaction}
@@ -239,7 +260,7 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
 
               <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs">
                 <span className="text-[11px] font-black uppercase text-emerald-400 block mb-1 flex items-center gap-1">
-                  ✅ Prefrontal Mastered Response
+                  {t.prefrontalResponseLabel}
                 </span>
                 <p className="text-slate-100 font-bold">
                   {scenario.prefrontalResponse}
@@ -248,15 +269,15 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
             </div>
 
             <div className="p-3 rounded-xl bg-brand-950/20 border border-brand-500/20 text-xs text-slate-300">
-              💡 <strong>Speech Rule:</strong> {scenario.mentalPauseTip}
+              💡 <strong>{t.speechRuleLabel}</strong> {scenario.mentalPauseTip}
             </div>
 
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setScenario(getRandomScenario())}
+                onClick={() => setScenario(getRandomLocalizedScenario(language))}
                 className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-                title="Another Scenario"
+                title={language === 'pt-BR' ? 'Outro Cenário' : 'Another Scenario'}
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -264,7 +285,7 @@ export const ThinkBeforeSpeakDrill: React.FC<ThinkBeforeSpeakDrillProps> = ({
                 onClick={handleFinish}
                 className="flex-1 py-3 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2"
               >
-                <CheckCircle2 className="w-4 h-4" /> I Rehearsed The Pause (Log Drill)
+                <CheckCircle2 className="w-4 h-4" /> {t.rehearsedPauseBtn}
               </button>
             </div>
           </div>

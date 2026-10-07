@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Dumbbell, Calendar, Cloud, Volume2, VolumeX, Plus, Sparkles, Brain, AlertTriangle, ShieldCheck, HeartPulse } from 'lucide-react';
+import { Flame, Dumbbell, Calendar, Cloud, Volume2, VolumeX, Sparkles, Brain, AlertTriangle, Settings, Globe } from 'lucide-react';
 import { UserFitnessProfile, WorkoutLogEntry, WorkoutRoutine } from './types/fitness';
 import { MoodLogEntry, EmotionalControlDrillLog, HALTState } from './types/mood';
 import { StorageService } from './services/storageService';
@@ -15,16 +15,22 @@ import { CustomRoutineModal } from './components/CustomRoutineModal';
 import { MoodTrackerModal } from './components/MoodTrackerModal';
 import { ThinkBeforeSpeakDrill } from './components/ThinkBeforeSpeakDrill';
 import { MoodAndMindView } from './components/MoodAndMindView';
+import { SettingsView } from './components/SettingsView';
 import { GoogleDriveService } from './services/googleDriveService';
+import { Language, TRANSLATIONS } from './i18n/translations';
+import { getLocalizedRoutines } from './data/localizedData';
 
 export const App: React.FC = () => {
   const [profile, setProfile] = useState<UserFitnessProfile>(StorageService.getProfile());
   const [logs, setLogs] = useState<WorkoutLogEntry[]>(StorageService.getLogs());
-  const [routines, setRoutines] = useState<WorkoutRoutine[]>(StorageService.getAllRoutines());
+  const [customRoutines, setCustomRoutines] = useState<WorkoutRoutine[]>(StorageService.getCustomRoutines());
   const [moodLogs, setMoodLogs] = useState<MoodLogEntry[]>(StorageService.getMoodLogs());
   const [emotionalDrills, setEmotionalDrills] = useState<EmotionalControlDrillLog[]>(StorageService.getEmotionalDrills());
 
-  const [activeTab, setActiveTab] = useState<'today' | 'mind' | 'library' | 'progress' | 'backup'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'mind' | 'library' | 'progress' | 'backup' | 'settings'>('today');
+
+  const lang: Language = profile.language || 'pt-BR';
+  const t = TRANSLATIONS[lang];
 
   // Active workout execution
   const [activeWorkoutRoutine, setActiveWorkoutRoutine] = useState<WorkoutRoutine | null>(null);
@@ -48,7 +54,7 @@ export const App: React.FC = () => {
   const reloadData = () => {
     setProfile(StorageService.getProfile());
     setLogs(StorageService.getLogs());
-    setRoutines(StorageService.getAllRoutines());
+    setCustomRoutines(StorageService.getCustomRoutines());
     setMoodLogs(StorageService.getMoodLogs());
     setEmotionalDrills(StorageService.getEmotionalDrills());
   };
@@ -56,6 +62,15 @@ export const App: React.FC = () => {
   useEffect(() => {
     reloadData();
   }, []);
+
+  // Quick toggle language
+  const handleToggleLanguage = () => {
+    const nextLang: Language = lang === 'pt-BR' ? 'en' : 'pt-BR';
+    const updated: UserFitnessProfile = { ...profile, language: nextLang };
+    setProfile(updated);
+    StorageService.saveProfile(updated);
+    soundService.speak(nextLang === 'pt-BR' ? 'Português ativado' : 'English enabled', nextLang);
+  };
 
   // Audio toggles
   const handleToggleSound = () => {
@@ -162,13 +177,16 @@ export const App: React.FC = () => {
     const existing = StorageService.getCustomRoutines();
     const updated = [newRoutine, ...existing];
     StorageService.saveCustomRoutines(updated);
-    setRoutines(StorageService.getAllRoutines());
+    setCustomRoutines(updated);
   };
 
   const latestMood = moodLogs.length > 0 ? moodLogs[0] : null;
   const isHaltTriggered = latestMood?.halt && (
     latestMood.halt.hungry || latestMood.halt.angry || latestMood.halt.lonely || latestMood.halt.tired
   );
+
+  // Localized routines combination
+  const allCurrentRoutines: WorkoutRoutine[] = [...getLocalizedRoutines(lang), ...customRoutines];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
@@ -180,20 +198,30 @@ export const App: React.FC = () => {
             <span className="text-2xl drop-shadow-md">🍏</span>
             <div>
               <h1 className="font-black text-base md:text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-300 bg-clip-text text-transparent">
-                MAÇÃ VERDE <span className="text-brand-400 font-mono text-xs">FITNESS & MOOD</span>
+                {t.appTitle} <span className="text-brand-400 font-mono text-xs">{t.appBadge}</span>
               </h1>
               <p className="text-[10px] text-slate-400 font-semibold tracking-wide">
-                HIIT Overload • Posture Antidote • Emotional Control Under Stress
+                {t.appSubtitle}
               </p>
             </div>
           </div>
 
           {/* Quick Streak & Dual Mind-Body Indicators */}
           <div className="flex items-center space-x-2 md:space-x-3">
+            {/* Quick Language Toggle */}
+            <button
+              onClick={handleToggleLanguage}
+              className="px-2.5 py-1 rounded-lg border text-xs font-bold transition flex items-center gap-1 bg-slate-900 border-slate-700 hover:border-brand-500/50 text-slate-200"
+              title={lang === 'pt-BR' ? 'Alternar para Inglês' : 'Switch to Portuguese'}
+            >
+              <Globe className="w-3.5 h-3.5 text-brand-400" />
+              <span>{lang === 'pt-BR' ? '🇧🇷 PT' : '🇺🇸 EN'}</span>
+            </button>
+
             {/* Streak Counter */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-950/60 border border-orange-500/40 text-orange-400 text-xs font-black shadow-inner">
               <Flame className="w-4 h-4 fill-current text-orange-400" />
-              <span>{profile.currentStreak}d</span>
+              <span>{t.streakBadge.replace('{count}', String(profile.currentStreak))}</span>
             </div>
 
             {/* HALT Status Quick Shield */}
@@ -204,10 +232,10 @@ export const App: React.FC = () => {
                   setShowDrillModal(true);
                 }}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/40 text-amber-300 text-xs font-bold transition hover:bg-amber-900/60"
-                title="Biological buffer low! Tap to activate 5s speech pause"
+                title={lang === 'pt-BR' ? 'Reserva baixa! Toque para acionar a pausa de 5s' : 'Biological buffer low! Tap to activate 5s speech pause'}
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                <span>HALT Shield Active</span>
+                <span>{lang === 'pt-BR' ? 'Escudo H.A.L.T.' : 'HALT Shield Active'}</span>
               </button>
             ) : (
               <button
@@ -216,10 +244,10 @@ export const App: React.FC = () => {
                   setShowMoodModal(true);
                 }}
                 className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-semibold hover:border-slate-700"
-                title="Tap to check-in mood"
+                title={lang === 'pt-BR' ? 'Toque para registrar humor' : 'Tap to check-in mood'}
               >
                 <Brain className="w-3.5 h-3.5 text-brand-400" />
-                <span>{latestMood ? `Mood: ${latestMood.valence}` : 'Check-in Mood'}</span>
+                <span>{latestMood ? `${lang === 'pt-BR' ? 'Humor' : 'Mood'}: ${latestMood.valence}` : t.checkinMoodBtn}</span>
               </button>
             )}
 
@@ -242,7 +270,7 @@ export const App: React.FC = () => {
               }`}
               title="Toggle Spoken Voice Coach"
             >
-              🗣️ {profile.voiceCoachEnabled ? 'Voice On' : 'Voice Off'}
+              🗣️ {profile.voiceCoachEnabled ? t.voiceOn : t.voiceOff}
             </button>
           </div>
         </div>
@@ -259,7 +287,7 @@ export const App: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Sparkles className="w-4 h-4" /> Today's Habit
+            <Sparkles className="w-4 h-4" /> {t.tabToday}
           </button>
 
           <button
@@ -270,7 +298,7 @@ export const App: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Brain className="w-4 h-4" /> Mind & Emotional Control
+            <Brain className="w-4 h-4" /> {t.tabMind}
           </button>
 
           <button
@@ -281,7 +309,7 @@ export const App: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Dumbbell className="w-4 h-4" /> Technique & Posture
+            <Dumbbell className="w-4 h-4" /> {t.tabLibrary}
           </button>
 
           <button
@@ -292,7 +320,7 @@ export const App: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Calendar className="w-4 h-4" /> Progress & Heatmap
+            <Calendar className="w-4 h-4" /> {t.tabProgress}
           </button>
 
           <button
@@ -303,7 +331,18 @@ export const App: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Cloud className="w-4 h-4" /> Local & Google Drive
+            <Cloud className="w-4 h-4" /> {t.tabBackup}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black tracking-wide uppercase transition flex items-center gap-2 shrink-0 ${
+              activeTab === 'settings'
+                ? 'bg-brand-500 text-slate-950 shadow-md shadow-brand-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Settings className="w-4 h-4" /> {t.tabSettings}
           </button>
         </div>
       </nav>
@@ -313,7 +352,7 @@ export const App: React.FC = () => {
         {activeTab === 'today' && (
           <TodayWorkoutView
             profile={profile}
-            routines={routines}
+            routines={allCurrentRoutines}
             latestMood={latestMood}
             onStartWorkout={handleStartWorkout}
             onOpenCustomBuilder={() => setShowCustomBuilder(true)}
@@ -330,6 +369,7 @@ export const App: React.FC = () => {
 
         {activeTab === 'mind' && (
           <MoodAndMindView
+            language={lang}
             moodLogs={moodLogs}
             drills={emotionalDrills}
             onOpenMoodModal={(initial) => {
@@ -344,7 +384,7 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'library' && (
-          <ExerciseLibraryView />
+          <ExerciseLibraryView language={lang} />
         )}
 
         {activeTab === 'progress' && (
@@ -352,6 +392,7 @@ export const App: React.FC = () => {
             profile={profile}
             logs={logs}
             moodLogs={moodLogs}
+            language={lang}
           />
         )}
 
@@ -360,6 +401,17 @@ export const App: React.FC = () => {
             profile={profile}
             logs={logs}
             onDataUpdated={reloadData}
+            language={lang}
+          />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsView
+            profile={profile}
+            onUpdateProfile={(updated) => {
+              setProfile(updated);
+              reloadData();
+            }}
           />
         )}
       </main>
@@ -368,6 +420,7 @@ export const App: React.FC = () => {
       {activeWorkoutRoutine && !completedWorkoutResult && (
         <WorkoutPlayerHUD
           routine={activeWorkoutRoutine}
+          language={lang}
           onFinishWorkout={handleFinishWorkoutHUD}
           onCancelWorkout={() => setActiveWorkoutRoutine(null)}
           soundEnabled={profile.soundEnabled}
@@ -403,6 +456,7 @@ export const App: React.FC = () => {
       {/* Custom Routine Builder Modal */}
       {showCustomBuilder && (
         <CustomRoutineModal
+          language={lang}
           onSaveRoutine={handleSaveCustomRoutine}
           onClose={() => setShowCustomBuilder(false)}
         />
@@ -411,6 +465,7 @@ export const App: React.FC = () => {
       {/* Mood Tracker Modal */}
       {showMoodModal && (
         <MoodTrackerModal
+          language={lang}
           onSaveMood={handleSaveMood}
           onClose={() => setShowMoodModal(false)}
           initialHalt={initialMoodHalt}
@@ -420,6 +475,7 @@ export const App: React.FC = () => {
       {/* Think Before You Speak / High-Pulse Emotional Control Drill */}
       {showDrillModal && (
         <ThinkBeforeSpeakDrill
+          language={lang}
           onCompleteDrill={handleCompleteEmotionalDrill}
           onClose={() => setShowDrillModal(false)}
           initialHeartRateElevated={drillElevatedPulse}
