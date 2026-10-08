@@ -92,6 +92,9 @@ export interface UserFitnessProfile {
     autoBackupPrompt: boolean;
   };
   preferredWorkoutTimeMinutes: number;
+  hasCompletedOnboarding?: boolean;
+  hasSeenTour?: boolean;
+  selectedGoals?: GoalTarget[];
 }
 
 export interface DailyOverloadChallenge {

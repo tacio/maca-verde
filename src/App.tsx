@@ -17,6 +17,8 @@ import { ThinkBeforeSpeakDrill } from './components/ThinkBeforeSpeakDrill';
 import { MoodAndMindView } from './components/MoodAndMindView';
 import { SettingsView } from './components/SettingsView';
 import { GoogleDriveService } from './services/googleDriveService';
+import { OnboardingModal } from './components/OnboardingModal';
+import { DemoTourModal } from './components/DemoTourModal';
 import { Language, TRANSLATIONS } from './i18n/translations';
 import { getLocalizedRoutines } from './data/localizedData';
 
@@ -49,6 +51,13 @@ export const App: React.FC = () => {
   const [initialMoodHalt, setInitialMoodHalt] = useState<Partial<HALTState> | undefined>(undefined);
   const [showDrillModal, setShowDrillModal] = useState(false);
   const [drillElevatedPulse, setDrillElevatedPulse] = useState(false);
+
+  // Onboarding & Demo Tour
+  const [showOnboarding, setShowOnboarding] = useState(
+    profile.hasCompletedOnboarding === false || (profile.hasCompletedOnboarding === undefined && profile.totalWorkouts === 0)
+  );
+  const [showTourModal, setShowTourModal] = useState(false);
+  const [tourStep, setTourStep] = useState(1);
 
   // Refresh data from storage
   const reloadData = () => {
@@ -85,6 +94,25 @@ export const App: React.FC = () => {
     setProfile(updated);
     StorageService.saveProfile(updated);
     soundService.setVoiceCoachEnabled(updated.voiceCoachEnabled);
+  };
+
+  const handleFinishOnboarding = (updatedProfile: UserFitnessProfile, startTour: boolean) => {
+    setProfile(updatedProfile);
+    StorageService.saveProfile(updatedProfile);
+    setShowOnboarding(false);
+    if (startTour) {
+      setTourStep(1);
+      setShowTourModal(true);
+    }
+  };
+
+  const handleLaunchTour = () => {
+    setTourStep(1);
+    setShowTourModal(true);
+  };
+
+  const handleLaunchOnboarding = () => {
+    setShowOnboarding(true);
   };
 
   // Start workout
@@ -216,6 +244,15 @@ export const App: React.FC = () => {
             >
               <Globe className="w-3.5 h-3.5 text-brand-400" />
               <span>{lang === 'pt-BR' ? '🇧🇷 PT' : '🇺🇸 EN'}</span>
+            </button>
+
+            {/* Quick Tour Button */}
+            <button
+              onClick={handleLaunchTour}
+              className="p-2 rounded-lg border text-xs font-bold transition flex items-center justify-center bg-slate-900 border-slate-700 hover:border-brand-500/50 text-brand-400"
+              title={t.tourRestartBtn}
+            >
+              <Sparkles className="w-4 h-4" />
             </button>
 
             {/* Streak Counter */}
@@ -412,6 +449,8 @@ export const App: React.FC = () => {
               setProfile(updated);
               reloadData();
             }}
+            onLaunchTour={handleLaunchTour}
+            onLaunchOnboarding={handleLaunchOnboarding}
           />
         )}
       </main>
@@ -479,6 +518,40 @@ export const App: React.FC = () => {
           onCompleteDrill={handleCompleteEmotionalDrill}
           onClose={() => setShowDrillModal(false)}
           initialHeartRateElevated={drillElevatedPulse}
+        />
+      )}
+
+      {/* Full Onboarding Wizard Modal */}
+      {showOnboarding && (
+        <OnboardingModal
+          currentProfile={profile}
+          language={lang}
+          onLanguageChange={(newLang) => {
+            const updated = { ...profile, language: newLang };
+            setProfile(updated);
+            StorageService.saveProfile(updated);
+          }}
+          onFinishOnboarding={handleFinishOnboarding}
+          onImportBackup={() => {
+            reloadData();
+            setShowOnboarding(false);
+          }}
+        />
+      )}
+
+      {/* Interactive Guided Demo Tour */}
+      {showTourModal && (
+        <DemoTourModal
+          language={lang}
+          currentStep={tourStep}
+          onStepChange={(step) => setTourStep(step)}
+          onCloseTour={() => {
+            setShowTourModal(false);
+            const updated = { ...profile, hasSeenTour: true };
+            setProfile(updated);
+            StorageService.saveProfile(updated);
+          }}
+          onTabChange={(tab) => setActiveTab(tab)}
         />
       )}
 

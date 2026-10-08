@@ -35,6 +35,9 @@ const DEFAULT_PROFILE: UserFitnessProfile = {
     autoBackupPrompt: true,
   },
   preferredWorkoutTimeMinutes: 15,
+  hasCompletedOnboarding: false,
+  hasSeenTour: false,
+  selectedGoals: ['posture', 'belly_fat', 'cardio'],
 };
 
 export class StorageService {

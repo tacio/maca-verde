@@ -8,9 +8,16 @@ import { soundService } from '../services/soundService';
 interface SettingsViewProps {
   profile: UserFitnessProfile;
   onUpdateProfile: (updated: UserFitnessProfile) => void;
+  onLaunchTour?: () => void;
+  onLaunchOnboarding?: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ profile, onUpdateProfile }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  profile,
+  onUpdateProfile,
+  onLaunchTour,
+  onLaunchOnboarding
+}) => {
   const [currentLang, setCurrentLang] = useState<Language>(profile.language || 'pt-BR');
   const [name, setName] = useState(profile.name || 'Atleta');
   const [preferredMinutes, setPreferredMinutes] = useState(profile.preferredWorkoutTimeMinutes || 15);
@@ -235,6 +242,45 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profile, onUpdatePro
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-brand-500"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Guided Tour & Onboarding Section */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-5 h-5 text-brand-400" />
+            <h3 className="text-base font-bold text-white">
+              {currentLang === 'pt-BR' ? 'Tour Guiado & Integração' : 'Interactive Tour & Setup'}
+            </h3>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">
+            {currentLang === 'pt-BR'
+              ? 'Reveja a demonstração dos recursos ou reconfigure suas metas e baseline iniciais.'
+              : 'Replay the guided feature tour or recalibrate your baseline profile settings.'}
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            {onLaunchTour && (
+              <button
+                type="button"
+                onClick={onLaunchTour}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-brand-400" />
+                <span>{t.tourRestartBtn}</span>
+              </button>
+            )}
+
+            {onLaunchOnboarding && (
+              <button
+                type="button"
+                onClick={onLaunchOnboarding}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 hover:text-white transition flex items-center gap-2"
+              >
+                <User className="w-4 h-4 text-slate-400" />
+                <span>{t.onboardingRestartBtn}</span>
+              </button>
+            )}
           </div>
         </div>
 
