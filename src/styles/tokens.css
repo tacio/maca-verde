@@ -1,0 +1,91 @@
+/*
+ * Design tokens — the only source of colors, radii, motion and type for the
+ * redesigned UI (docs/design/01-principles.md, P13). Tailwind maps semantic
+ * class names to these variables (tailwind.config.js); components never use
+ * raw hex values or Tailwind palette colors (enforced by scripts/lint-tokens.mjs).
+ *
+ * Contrast pairs are verified in src/styles/tokens.test.ts (WCAG AA, 4.5:1).
+ * Theme follows the system; data-theme="light|dark" on <html> forces one.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* surfaces */
+  --canvas: #f7f7f4;
+  --surface: #ffffff;
+  --surface-2: #eeeee8;
+  --line: #deded6;
+
+  /* text */
+  --ink: #1a1c19;
+  --ink-muted: #5a5f57;
+
+  /* the one accent: green apple */
+  --accent: #2f7a1f;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4f0da;
+
+  /* HALT and other gentle warnings — never used for failure (P8) */
+  --caution: #855400;
+  --caution-soft: #f8ecd3;
+
+  /* rest phases in the workout HUD: distinguishable from work at 3 m (P12) */
+  --rest: #2e5c88;
+  --rest-ink: #ffffff;
+
+  /* type */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --hud-digits: 15rem; /* ≥ 160 px cap height at 412 px width (P12) */
+
+  /* shape & motion */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --dur-fast: 150ms;
+  --dur: 300ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --canvas: #111311;
+    --surface: #181b18;
+    --surface-2: #212521;
+    --line: #2d322d;
+    --ink: #eceee9;
+    --ink-muted: #a2a9a0;
+    --accent: #8ccb55;
+    --accent-ink: #102007;
+    --accent-soft: #1e2c16;
+    --caution: #e9b04f;
+    --caution-soft: #2c2311;
+    --rest: #6f9cc8;
+    --rest-ink: #0a1622;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #111311;
+  --surface: #181b18;
+  --surface-2: #212521;
+  --line: #2d322d;
+  --ink: #eceee9;
+  --ink-muted: #a2a9a0;
+  --accent: #8ccb55;
+  --accent-ink: #102007;
+  --accent-soft: #1e2c16;
+  --caution: #e9b04f;
+  --caution-soft: #2c2311;
+  --rest: #6f9cc8;
+  --rest-ink: #0a1622;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+  }
+}
