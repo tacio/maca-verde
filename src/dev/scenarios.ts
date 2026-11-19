@@ -14,6 +14,8 @@
 
 import { DEFAULT_CONFIG, parseStamp, toUnix, type DayConfig } from '../time/daykeep';
 import { setNow } from '../time/clock';
+import { FIXTURE_SCENARIOS, buildScenarioFixture } from './fixtures';
+import { toStorageEntries } from '../storage/store';
 
 export interface Scenario {
   description: string;
@@ -32,7 +34,24 @@ export const SCENARIOS: Record<string, Scenario> = {
     description: 'First use: empty storage, onboarding',
     storage: {},
   },
+  ...fixtureScenarios(),
 };
+
+/** Data-state scenarios built from src/dev/fixtures.ts (storage exactly as store.ts writes it). */
+function fixtureScenarios(): Record<string, Scenario> {
+  const out: Record<string, Scenario> = {};
+  for (const [name, s] of Object.entries(FIXTURE_SCENARIOS)) {
+    const f = buildScenarioFixture(s);
+    out[name] = {
+      description: s.description,
+      config: f.config,
+      now: f.stamp,
+      storage: toStorageEntries(f.data),
+      ...(s.screen ? { screen: s.screen } : {}),
+    };
+  }
+  return out;
+}
 
 export function applyScenarioFromUrl(url: URL = new URL(window.location.href)): string | null {
   const name = url.searchParams.get('scenario');
