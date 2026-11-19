@@ -30,6 +30,18 @@ Everything else (workouts, check-ins, records) is supporting signal.
 | Never twice | A reserve **cannot** cover a miss on the day right after a miss: two misses in a row break the streak | Runs of misses are what predict quitting (Milkman et al. 2021) |
 | Break | Streak → 0; best streak is kept; the next day is a recovery day | P6, P7 |
 
+### Against "might as well spend it" (day 14359)
+
+Reserves must never feel like a budget to use. They are insurance, not currency.
+
+- **Called "streak protection" in the UI**; "reserve" is an internal term only.
+- **Invisible while deciding**: Today never shows protection. It appears only on Progress and in the justification outcome after a miss.
+- **No forecasts**: no copy ever predicts that protection will cover an active day ("your streak is safe"). Outcomes are stated only after the day closes.
+- **No spend action**: protection is applied automatically after a day ends; there is no button to use it.
+- **A protected day is still a miss** everywhere: grid, 100-day average, required justification, and the next day is a recovery day that protection can't cover.
+- **No waste framing at the cap**: at 2, an on-time approval says "Protection full" — never "+1 lost".
+- **Not spending is rewarded**: a *clean cycle* (10 of 10 days actually done, none protected) gets a distinct mark in the Progress grid and a completion moment.
+
 ## The plan (new feature — not implemented today)
 
 | Rule | Decision |
