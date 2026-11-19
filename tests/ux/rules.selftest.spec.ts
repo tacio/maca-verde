@@ -62,6 +62,19 @@ const CASES: { rule: RuleName; bad: string; good: string }[] = [
     ),
   },
   {
+    rule: 'last-hint',
+    bad: screen(
+      PRIMARY +
+        '<div data-target><label for="a">Rope turns</label><input id="a" data-target-input value="350"></div>' +
+        '<label for="b">Rounds</label><input id="b" data-target-input value="3">',
+    ),
+    good: screen(
+      PRIMARY +
+        '<div data-target><label for="a">Rope turns</label><input id="a" data-target-input value="350">' +
+        '<p data-last-hint>last 320 · suggested 345</p></div>',
+    ),
+  },
+  {
     rule: 'text-lines',
     bad: screen(PRIMARY + `<p>${'Long explanation about the science of intervals. '.repeat(4)}</p>`),
     good: screen(

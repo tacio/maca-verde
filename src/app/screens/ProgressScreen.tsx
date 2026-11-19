@@ -1,11 +1,11 @@
-import { Diamond, Settings, Sprout } from 'lucide-react';
+import { Settings, Sprout } from 'lucide-react';
 import { RESERVE_CAP } from '../../domain/record';
 import { shortDay } from '../../time/daykeep';
 import { Button, IconButton } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { ScreenHeader } from '../../ui/ScreenHeader';
 import { StatsBlock } from '../../ui/StatsBlock';
-import { cx } from '../../ui/cx';
+import { DayCell } from '../DayCell';
 import { useApp } from '../AppContext';
 import { useNav } from '../nav';
 import { lastHundredGrid, type CellKind } from '../view';
@@ -19,37 +19,6 @@ const CELL_LABEL: Record<CellKind, string> = {
   future: 'upcoming',
   outside: 'before the record',
 };
-
-/** One grid cell. Kinds differ by fill, outline and mark, not only color. */
-function Cell({ kind }: { kind: CellKind }) {
-  const base = 'flex aspect-square w-full items-center justify-center rounded-[5px]';
-  switch (kind) {
-    case 'done':
-      return <span className={cx(base, 'bg-accent')} />;
-    case 'kept':
-      return (
-        <span className={cx(base, 'border-[1.5px] border-accent text-accent')}>
-          <Diamond aria-hidden size={10} strokeWidth={3} />
-        </span>
-      );
-    case 'missed':
-      return <span className={cx(base, 'border-[1.5px] border-ink-muted')} />;
-    case 'today':
-      return (
-        <span className={cx(base, 'border-2 border-accent')}>
-          <span className="size-1.5 rounded-full bg-accent" />
-        </span>
-      );
-    case 'future':
-      return <span className={cx(base, 'border border-dashed border-line')} />;
-    default:
-      return (
-        <span className={base}>
-          <span className="size-1 rounded-full bg-line" />
-        </span>
-      );
-  }
-}
 
 /** Progress (shell): stats + the last 100 days as 10 cycles × 10 days. */
 export function ProgressScreen() {
@@ -117,7 +86,7 @@ export function ProgressScreen() {
               >
                 {row.cells.map((c) => (
                   <li key={c.day} aria-label={`${shortDay(c.day, 3)} ${CELL_LABEL[c.kind]}`}>
-                    <Cell kind={c.kind} />
+                    <DayCell kind={c.kind} />
                   </li>
                 ))}
               </ol>
@@ -128,7 +97,7 @@ export function ProgressScreen() {
           {legend.map((k) => (
             <li key={k} className="flex items-center gap-1.5">
               <span className="w-3">
-                <Cell kind={k} />
+                <DayCell kind={k} />
               </span>
               {k === 'kept' ? 'kept' : CELL_LABEL[k]}
             </li>

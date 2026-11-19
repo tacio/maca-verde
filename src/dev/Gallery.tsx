@@ -10,6 +10,7 @@ import { dayStartUnix } from '../domain/plan';
 import {
   BottomNav,
   Button,
+  Checkbox,
   ChipGroup,
   DayHeader,
   Disclosure,
@@ -23,6 +24,7 @@ import {
   StatsBlock,
   StatusGlyph,
   Stepper,
+  TextField,
   type Tab,
 } from '../ui';
 
@@ -57,6 +59,8 @@ export default function Gallery() {
   const [tab, setTab] = useState<Tab>('today');
   const [sheet, setSheet] = useState(false);
   const [full, setFull] = useState(false);
+  const [epoch, setEpoch] = useState('2000-01-01 03:00 -0300');
+  const [tpl, setTpl] = useState(true);
   const cfg = DEFAULT_CONFIG;
   const now = dayStartUnix(14355, cfg) + Math.floor(0.4 * cfg.dayLength);
 
@@ -151,6 +155,11 @@ export default function Gallery() {
           <Stepper label="Rounds" hint="last 2 · suggested 3" value={rounds} min={1} max={12} onChange={setRounds} />
           <ChipGroup label="H.A.L.T." showLabel multiple options={HALT} value={halt} onChange={setHalt} />
           <ChipGroup label="What got in the way?" showLabel options={REASONS} value={reason} onChange={setReason} />
+          <TextField label="Day 0 starts at" hint="e.g. 2000-01-01 03:00 -0300" value={epoch} onChange={(e) => setEpoch(e.target.value)} />
+          <TextField label="Day length (seconds)" error="Use a whole number of seconds" defaultValue="86400.5" />
+          <Checkbox checked={tpl} onChange={setTpl}>
+            Save as template
+          </Checkbox>
         </Section>
 
         <Section title="Disclosure">

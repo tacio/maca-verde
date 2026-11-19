@@ -20,9 +20,36 @@ const NavContext = createContext<Nav | null>(null);
 
 const TAB_SCREENS: readonly string[] = ['today', 'plan', 'progress'];
 
+export const ONBOARD_STEPS = ['day', 'anchor', 'plan'] as const;
+export type OnboardStep = (typeof ONBOARD_STEPS)[number];
+
+export interface InitialView {
+  tab: Tab;
+  flows: string[];
+  /** `?screen=onboard-<step>` opens onboarding at that step (dev scenarios). */
+  onboardStep?: OnboardStep;
+}
+
+/**
+ * A flow is a name with optional `:`-separated arguments, e.g. `cycle:1436`,
+ * `day-edit:14362`, `day-edit:14362:blank` (start from an empty day).
+ */
+export function parseFlow(flow: string): { name: string; args: string[] } {
+  const [name, ...args] = flow.split(':');
+  return { name, args };
+}
+
+/** A whole-number flow argument, or undefined. */
+export function intArg(arg: string | undefined): number | undefined {
+  return arg !== undefined && /^-?\d+$/.test(arg) ? Number(arg) : undefined;
+}
+
 /** Initial view from `?screen=` (dev scenarios; harmless in production). */
-export function initialView(screen: string | null): { tab: Tab; flows: string[] } {
+export function initialView(screen: string | null): InitialView {
   if (!screen || screen === 'today') return { tab: 'today', flows: [] };
+  const step = screen.startsWith('onboard-') ? screen.slice('onboard-'.length) : null;
+  if (step !== null && (ONBOARD_STEPS as readonly string[]).includes(step))
+    return { tab: 'today', flows: [], onboardStep: step as OnboardStep };
   if (TAB_SCREENS.includes(screen)) return { tab: screen as Tab, flows: [] };
   // Settings lives behind the gear on Progress (02-workflows §2).
   if (screen === 'settings') return { tab: 'progress', flows: ['settings'] };
@@ -37,7 +64,7 @@ interface Entry {
   pushed: boolean;
 }
 
-export function NavProvider({ initial, children }: { initial: { tab: Tab; flows: string[] }; children: ReactNode }) {
+export function NavProvider({ initial, children }: { initial: InitialView; children: ReactNode }) {
   const [tab, setTabState] = useState<Tab>(initial.tab);
   const [stack, setStack] = useState<Entry[]>(() => initial.flows.map((flow) => ({ flow, pushed: false })));
   const stackRef = useRef(stack);

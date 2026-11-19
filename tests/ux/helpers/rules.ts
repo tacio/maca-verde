@@ -10,10 +10,19 @@
  *   [data-stats] > [data-streak] + [data-average] + [data-reserves]  (P6)
  *   [data-disclosure]     text inside is exempt from the 2-line rule (P10)
  *   [data-allow-long]     text inside is exempt from the 2-line rule (P10)
+ *   [data-target] > [data-target-input] + [data-last-hint]  numeric target shows the last actual (P3)
  */
 import type { Page } from '@playwright/test';
 
-export type RuleName = 'primary' | 'nav' | 'target-size' | 'hud-controls' | 'hud-digits' | 'streak' | 'text-lines';
+export type RuleName =
+  | 'primary'
+  | 'nav'
+  | 'target-size'
+  | 'hud-controls'
+  | 'hud-digits'
+  | 'streak'
+  | 'text-lines'
+  | 'last-hint';
 
 export interface Violation {
   rule: RuleName;
@@ -127,6 +136,17 @@ export async function checkDom(page: Page): Promise<Violation[]> {
       for (const need of ['data-average', 'data-reserves'])
         if (![...stats.querySelectorAll(`[${need}]`)].some(visible))
           add('streak', `${describe(el)}: [data-stats] has no visible [${need}] next to [data-streak]`);
+    }
+
+    // P3 — every numeric target field shows the last actual (or "no data yet") next to it.
+    for (const el of [...document.querySelectorAll('[data-target-input]')].filter(visible)) {
+      const box = el.closest('[data-target]');
+      if (!box) {
+        add('last-hint', `${describe(el)}: [data-target-input] outside a [data-target] container`);
+        continue;
+      }
+      if (![...box.querySelectorAll('[data-last-hint]')].some((h) => visible(h) && h.textContent!.trim()))
+        add('last-hint', `${describe(el)}: its [data-target] has no visible [data-last-hint]`);
     }
 
     return out;

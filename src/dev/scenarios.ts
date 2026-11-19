@@ -34,6 +34,24 @@ export const SCENARIOS: Record<string, Scenario> = {
     description: 'First use: empty storage, onboarding',
     storage: {},
   },
+  'onboard-day': {
+    description: 'Onboarding step 1: day 0 and day length, live preview',
+    now: '14355.4000',
+    storage: {},
+    screen: 'onboard-day',
+  },
+  'onboard-anchor': {
+    description: 'Onboarding step 2: the anchor ("After I ___, I train.")',
+    now: '14355.4000',
+    storage: {},
+    screen: 'onboard-anchor',
+  },
+  'onboard-plan': {
+    description: 'Onboarding step 3: first plan, days 14356–14359 pre-filled',
+    now: '14355.4000',
+    storage: {},
+    screen: 'onboard-plan',
+  },
   'ui-gallery': {
     description: 'Every UI primitive in its states (src/dev/Gallery.tsx)',
     storage: {},

@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './AppContext';
-import { NavProvider, initialView, useNav } from './nav';
-import { OnboardingPlaceholder } from './screens/OnboardingPlaceholder';
+import { NavProvider, initialView, intArg, parseFlow, useNav, type OnboardStep } from './nav';
+import { CycleScreen } from './screens/CycleScreen';
+import { DayScreen } from './screens/DayScreen';
+import { Onboarding } from './screens/Onboarding';
 import { PlaceholderScreen } from './screens/Placeholder';
 import { PlanScreen } from './screens/PlanScreen';
 import { ProgressScreen } from './screens/ProgressScreen';
@@ -12,13 +14,28 @@ import { TodayScreen } from './screens/TodayScreen';
 // so production builds drop it, like the scenarios.
 const Gallery = import.meta.env.DEV ? lazy(() => import('../dev/Gallery')) : null;
 
-function Screens() {
-  const { data } = useApp();
+function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
+  const { data, record } = useApp();
   const { tab, flow } = useNav();
 
-  if (!data.settings.onboardedUnix) return <OnboardingPlaceholder />;
-  if (flow === 'settings') return <SettingsScreen />;
-  if (flow) return <PlaceholderScreen name={flow} />;
+  if (!data.settings.onboardedUnix) return <Onboarding initialStep={onboardStep} />;
+  if (flow) {
+    const { name, args } = parseFlow(flow);
+    switch (name) {
+      case 'settings':
+        return <SettingsScreen />;
+      case 'cycle':
+        return <CycleScreen key={flow} cycle={intArg(args[0])} />;
+      case 'day-edit':
+      case 'day-locked': {
+        // Without a day: tomorrow (edit) or today (locked). DayScreen picks the mode from the lock.
+        const day = intArg(args[0]) ?? record.today + (name === 'day-edit' ? 1 : 0);
+        return <DayScreen key={flow} day={day} blank={args[1] === 'blank'} />;
+      }
+      default:
+        return <PlaceholderScreen name={name} />;
+    }
+  }
   switch (tab) {
     case 'plan':
       return <PlanScreen />;
@@ -38,10 +55,11 @@ export default function App() {
       </Suspense>
     );
   }
+  const initial = initialView(screen);
   return (
     <AppProvider>
-      <NavProvider initial={initialView(screen)}>
-        <Screens />
+      <NavProvider initial={initial}>
+        <Screens onboardStep={initial.onboardStep} />
       </NavProvider>
     </AppProvider>
   );

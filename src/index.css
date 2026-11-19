@@ -42,3 +42,14 @@ dialog.sheet[open]::backdrop {
     opacity: 0;
   }
 }
+
+/* Reserve-earned moment (src/app/screens/CycleEditor.tsx): calm rise, ≤ 2 s total. */
+.moment-in {
+  animation: moment-in var(--dur) var(--ease) both;
+}
+@keyframes moment-in {
+  from {
+    transform: translateY(12px) scale(0.96);
+    opacity: 0;
+  }
+}

@@ -250,14 +250,40 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     description: "Today done, next cycle (1436) starts in 2 days and isn't approved",
     fixture: { history: '.' + run(18) + 'D', today: 14358 },
   },
+  'cycle-approve': {
+    description: 'Approve the next cycle (1436), pre-filled, 2 days before it starts; one justified miss to look back on',
+    fixture: { history: '.' + run(14) + 'M' + run(3) + 'D', today: 14358 },
+    screen: 'cycle',
+  },
+  'cycle-late': {
+    description: 'Cycle 1436 started today without approval: the other 9 days can still be planned (late, no reserve)',
+    fixture: { history: '.' + run(20) + 'T', today: 14360 },
+    tweak: (data) => {
+      data.cycles = data.cycles.filter((c) => c.cycle !== 1436);
+      data.plans = data.plans.filter((p) => p.day < 14360);
+    },
+    screen: 'cycle',
+  },
   'day-edit': {
-    description: 'Day editor on an upcoming (editable) day',
+    description: 'Day editor on tomorrow (editable): a workout and a rest, with last actuals and suggestions',
     fixture: { history: STANDARD, today: TODAY },
+    tweak: (data, f) => {
+      const tomorrow = data.plans.find((p) => p.day === TODAY + 1)!;
+      tomorrow.items.splice(1, 0, { id: `${TODAY + 1}-r`, kind: 'rest', restKind: 'silence', durationSeconds: 900 });
+      const end = f.now - 3600;
+      data.rests.push({ id: 'r-today', restKind: 'silence', startUnix: end - 600, endUnix: end, durationSeconds: 600, completedFull: true });
+    },
     screen: 'day-edit',
   },
-  'day-locked': {
-    description: "Day editor read-only on today's (locked) plan",
+  'day-edit-empty': {
+    description: 'Day editor with every item removed: Save disabled',
     fixture: { history: STANDARD, today: TODAY },
+    screen: `day-edit:${TODAY + 1}:blank`,
+  },
+  'day-locked': {
+    description: "Today's plan, read-only (locked since today started)",
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'day-locked',
   },
   plan: {
     description: 'Plan: this cycle (approved) and the next one (not approved yet)',

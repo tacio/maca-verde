@@ -1,5 +1,5 @@
-import { CalendarPlus, CalendarRange } from 'lucide-react';
-import { approvalFor, cycleDays, dayStartUnix, findPlan, isDayPlanned } from '../../domain/plan';
+import { CalendarCheck, CalendarPlus, CalendarRange, ChevronRight, LayoutTemplate } from 'lucide-react';
+import { approvalFor, canEditDay, cycleDays, dayStartUnix, findPlan, isDayPlanned } from '../../domain/plan';
 import { cycleOf, formatDuration, shortDay } from '../../time/daykeep';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
@@ -8,25 +8,40 @@ import { ScreenHeader } from '../../ui/ScreenHeader';
 import { StatusGlyph } from '../../ui/StatusGlyph';
 import { cx } from '../../ui/cx';
 import { useApp } from '../AppContext';
+import { targetCycle } from '../cycle';
 import { useNav } from '../nav';
 import { dayGlyph, daySummary } from '../view';
+import { cycleRange } from './CycleEditor';
 import { TabScreen } from './TabScreen';
 
-/** Plan (shell): the current and next cycle as read-only lists of 10 days. */
+/** Plan: this cycle and the next; started days open read-only, upcoming ones open the day editor. */
 export function PlanScreen() {
   const { data, record, now, cfg } = useApp();
   const { open } = useNav();
-  const current = cycleOf(record.today);
+  const today = record.today;
+  const current = cycleOf(today);
   const next = current + 1;
-  const nextApproved = !!approvalFor(data.cycles, next);
+  const target = targetCycle(data.cycles, today);
+  const targetApproved = !!approvalFor(data.cycles, target);
 
-  const action = (
-    <Button variant="primary" full icon={CalendarPlus} onClick={() => open('cycle')}>
-      {nextApproved ? 'Review next cycle' : 'Plan next cycle'}
+  const action = targetApproved ? (
+    <Button variant="primary" full icon={CalendarCheck} onClick={() => open(`cycle:${target}`)}>
+      Review next cycle
+    </Button>
+  ) : (
+    <Button variant="primary" full icon={CalendarPlus} onClick={() => open(`cycle:${target}`)}>
+      {target === current ? 'Plan this cycle' : target === next ? 'Plan next cycle' : `Plan cycle ${target}`}
     </Button>
   );
 
-  if (data.plans.length === 0) {
+  const filledSlots = data.template.filter((slot) => slot.length > 0).length;
+  const templateLink = (
+    <Button variant="quiet" icon={LayoutTemplate} className="self-start px-2" onClick={() => open('settings-template')}>
+      Template · {filledSlots ? `${filledSlots} of 10 days` : 'empty'}
+    </Button>
+  );
+
+  if (!data.cycles.length) {
     return (
       <TabScreen screen="plan" action={action}>
         <ScreenHeader title="Plan" />
@@ -35,39 +50,40 @@ export function PlanScreen() {
     );
   }
 
-  const startsIn = formatDuration(dayStartUnix(next * 10, cfg) - now, cfg);
-
   return (
     <TabScreen screen="plan" action={action}>
       <ScreenHeader title="Plan" />
-      {cycleSection(
-        `This cycle · ${shortDay(current * 10, 3)}–${shortDay(current * 10 + 9, 3)}`,
-        approvalFor(data.cycles, current) ? 'Approved' : 'Not approved',
-        current,
-      )}
-      {cycleSection(
-        `Next cycle · ${shortDay(next * 10, 3)}–${shortDay(next * 10 + 9, 3)}`,
-        nextApproved ? 'Approved' : `Starts in ${startsIn} · not approved yet`,
-        next,
-      )}
+      {cycleSection(current, 'This cycle')}
+      {cycleSection(next, 'Next cycle')}
+      {templateLink}
     </TabScreen>
   );
 
-  function cycleSection(title: string, meta: string, cycle: number) {
-    const days = cycleDays(cycle);
-    const unplanned = days.every((d) => !findPlan(data.plans, d));
+  function cycleSection(cycle: number, label: string) {
+    const approval = approvalFor(data.cycles, cycle);
+    const first = dayStartUnix(cycle * 10, cfg);
+    const title = `${label} · ${cycleRange(cycle)}`;
+    const openDays = cycleDays(cycle).filter((d) => canEditDay(d, now, cfg));
+    let meta: string;
+    if (approval) meta = 'Approved';
+    else if (now < first) meta = `Starts in ${formatDuration(first - now, cfg)} · not approved yet`;
+    else meta = 'Not approved';
     return (
       <section aria-label={title} className="flex flex-col gap-1">
         <div className="pb-1">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
-          <p className="text-sm text-ink-muted">{meta}</p>
+          <p className="text-sm tabular-nums text-ink-muted">{meta}</p>
         </div>
-        {unplanned ? (
-          <p className="rounded-card border border-dashed border-line p-4 text-base text-ink-muted">
-            Not planned yet. Approve it before day {shortDay(cycle * 10, 3)} starts to earn a reserve.
-          </p>
+        {approval ? (
+          <ul className="-mx-3 flex flex-col">{cycleDays(cycle).map(dayRow)}</ul>
         ) : (
-          <ul className="-mx-3 flex flex-col">{days.map(dayRow)}</ul>
+          <p className="rounded-card border border-dashed border-line p-4 text-base text-ink-muted">
+            {now < first
+              ? `Approve it before day ${shortDay(cycle * 10, 3)} starts to earn a reserve.`
+              : openDays.length
+                ? `Days ${shortDay(openDays[0], 3)}–${shortDay(cycle * 10 + 9, 3)} can still be planned, without a reserve.`
+                : 'No plan for this cycle.'}
+          </p>
         )}
       </section>
     );
@@ -76,9 +92,10 @@ export function PlanScreen() {
   function dayRow(day: number) {
     const plan = findPlan(data.plans, day);
     const planned = isDayPlanned(day, data.cycles, data.plans, cfg);
+    const editable = canEditDay(day, now, cfg);
     const summary = plan ? daySummary(plan.items, cfg, data.routines) : null;
-    const isToday = day === record.today;
-    const title = !summary ? 'Not planned' : planned ? summary.title : `${summary.title} (draft)`;
+    const isToday = day === today;
+    const title = !summary ? 'Not planned' : planned || editable ? summary.title : `${summary.title} (not counted)`;
     const meta = isToday ? ['Today', summary?.meta].filter(Boolean).join(' · ') : summary?.meta || undefined;
     return (
       <li key={day}>
@@ -91,8 +108,9 @@ export function PlanScreen() {
           }
           title={title}
           meta={meta}
-          muted={!summary || day < record.today}
-          trailing={summary ? <StatusGlyph status={dayGlyph(day, record)} /> : undefined}
+          muted={!summary || day < today}
+          trailing={editable ? <ChevronRight aria-hidden size={18} /> : summary ? <StatusGlyph status={dayGlyph(day, record)} /> : undefined}
+          onClick={() => open(`${editable ? 'day-edit' : 'day-locked'}:${day}`)}
         />
       </li>
     );
