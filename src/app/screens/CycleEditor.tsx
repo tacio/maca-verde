@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { CalendarCheck, ChevronRight, Diamond, Lock } from 'lucide-react';
 import { approvalFor, canEditDay, cycleDays, dayStartUnix, findPlan, validatePlanItems } from '../../domain/plan';
 import { nowUnix } from '../../time/clock';
@@ -10,12 +10,10 @@ import { cx } from '../../ui/cx';
 import { useApp } from '../AppContext';
 import { approveWithDrafts, cycleDrafts, cycleRowSummary, lookBack, type LookBack } from '../cycle';
 import { DayCell } from '../DayCell';
+import { Moment } from '../Moment';
 import { CountBadge } from '../ItemIcon';
 import { useNav } from '../nav';
 import type { CellKind } from '../view';
-
-/** How long the reserve-earned moment stays (P13: ≤ 2 s). */
-export const MOMENT_MS = 1600;
 
 export interface CycleLayoutProps {
   /** "Starts in .6596 · approve for +1 ◆" */
@@ -73,19 +71,11 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
         {now < firstStart ? `Starts in ${formatDuration(firstStart - now, cfg)}` : `From day ${shortDay(unstarted[0], 3)}`} · approve for{' '}
         <span className="whitespace-nowrap font-medium text-ink">
           +1 <Diamond aria-hidden size={13} strokeWidth={2.5} className="inline align-[-1px] text-accent" />
-          <span className="sr-only"> reserve</span>
+          <span className="sr-only"> streak protection</span>
         </span>
       </>
     );
-  else subtitle = `Started ${formatDuration(now - firstStart, cfg)} ago · late — no reserve`;
-
-  const finishRef = useRef(onFinish);
-  finishRef.current = onFinish;
-  useEffect(() => {
-    if (!moment) return;
-    const id = window.setTimeout(() => finishRef.current(), MOMENT_MS);
-    return () => window.clearTimeout(id);
-  }, [moment]);
+  else subtitle = `Started ${formatDuration(now - firstStart, cfg)} ago · late — no protection earned`;
 
   const approve = () => {
     let result: ReturnType<typeof approveWithDrafts> | undefined;
@@ -220,20 +210,11 @@ function LookBackCard({ lb }: { lb: LookBack }) {
 /** The reserve-earned moment (02-workflows §6): calm, ≤ 2 s, tap to dismiss. */
 function ApprovedMoment({ cycle, onTime, days, onDismiss }: { cycle: number; onTime: boolean; days: number[]; onDismiss: () => void }) {
   return (
-    <div
-      role="status"
-      onClick={onDismiss}
-      className="fixed inset-0 z-30 flex flex-col items-center justify-center bg-canvas px-8 text-center"
-    >
-      <div className="moment-in flex flex-col items-center">
-        <span className="mb-5 flex size-20 items-center justify-center rounded-full bg-accent-soft text-accent">
-          {onTime ? <Diamond aria-hidden size={34} strokeWidth={2} /> : <CalendarCheck aria-hidden size={34} strokeWidth={1.75} />}
-        </span>
-        <p className="text-3xl font-semibold tracking-tight text-ink">{onTime ? '+1 reserve' : 'Cycle approved'}</p>
-        <p className="mt-2 text-base tabular-nums text-ink-muted">
-          {onTime ? `Cycle ${cycle} approved on time.` : `Days ${shortDay(days[0], 3)}–${shortDay(days[days.length - 1], 3)} are planned.`}
-        </p>
-      </div>
-    </div>
+    <Moment
+      icon={onTime ? Diamond : CalendarCheck}
+      title={onTime ? '+1 protection' : 'Cycle approved'}
+      body={onTime ? `Cycle ${cycle} approved on time.` : `Days ${shortDay(days[0], 3)}–${shortDay(days[days.length - 1], 3)} are planned.`}
+      onDismiss={onDismiss}
+    />
   );
 }

@@ -230,6 +230,44 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
       latest.halt = { hungry: true, angry: false, lonely: false, tired: true };
     },
   },
+  'today-recovery-done': {
+    description: 'Recovery day completed after a protected miss: "Back on track"',
+    fixture: { history: since14340(run(14) + 'M', 'D'), today: TODAY },
+  },
+  'workout-preview': {
+    description: "Workout preview sheet for today's workout (intervals, How? per exercise)",
+    fixture: { history: STANDARD, today: TODAY },
+    screen: `preview:${TODAY}-0`,
+  },
+  mood: {
+    description: 'Mood check (J5): valence, HALT, save',
+    fixture: { history: since14340(run(15), 'P'), today: TODAY },
+    screen: 'mood',
+  },
+  'mood-more': {
+    description: 'Mood check with "More" open: energy, tension, speaking, notes',
+    fixture: { history: since14340(run(15), 'P'), today: TODAY },
+    screen: 'mood:more',
+  },
+  justify: {
+    description: 'Close yesterday (J7): streak kept with a reserve, today is a recovery day',
+    fixture: { history: since14340(run(14) + 'm', 'T'), today: TODAY },
+    screen: 'justify',
+  },
+  'justify-broken': {
+    description: 'Close yesterday after a protected miss: streak reset, average stays',
+    fixture: { history: since14340(run(13) + 'Mm', 'T'), today: TODAY },
+    screen: 'justify',
+  },
+  'justify-stack': {
+    description: 'Three days to close, oldest first: "1 of 3"',
+    fixture: { history: since14340(run(12) + 'mmm', 'T'), today: TODAY },
+    screen: 'justify',
+  },
+  'cycle-tomorrow': {
+    description: "Today done, next cycle (1436) starts tomorrow unapproved: approving it is Today's primary",
+    fixture: { history: '.' + run(19) + 'D', today: 14359 },
+  },
   'missed-yesterday': {
     description: 'Yesterday missed, justification pending (reserve used)',
     fixture: { history: since14340(run(14) + 'm', 'T'), today: TODAY },

@@ -55,10 +55,10 @@ const CASES: { rule: RuleName; bad: string; good: string }[] = [
   },
   {
     rule: 'streak',
-    bad: screen(PRIMARY + '<div data-stats><span data-streak>12 days</span><span data-reserves>2 reserves</span></div>'),
+    bad: screen(PRIMARY + '<div data-stats><span data-streak>12 days</span><span data-reserves>2 protection</span></div>'),
     good: screen(
       PRIMARY +
-        '<div data-stats><span data-streak>12 days</span> <span data-average>72 of 100</span> <span data-reserves>2 reserves</span></div>',
+        '<div data-stats><span data-streak>12 days</span> <span data-average>72 of 100</span></div>',
     ),
   },
   {
@@ -73,6 +73,13 @@ const CASES: { rule: RuleName; bad: string; good: string }[] = [
         '<div data-target><label for="a">Rope turns</label><input id="a" data-target-input value="350">' +
         '<p data-last-hint>last 320 · suggested 345</p></div>',
     ),
+  },
+  {
+    rule: 'justify-copy',
+    bad: '<main data-screen="justify"><h1>Day 358</h1><p>You missed your plan.</p><button data-primary>Save</button></main>',
+    good:
+      '<main data-screen="justify"><h1>Day 358 wasn\'t completed</h1><p>What got in the way?</p>' +
+      '<button data-primary>Save</button><button data-adjust-link>Adjust next days</button></main>',
   },
   {
     rule: 'text-lines',
@@ -94,6 +101,15 @@ for (const { rule, bad, good } of CASES) {
     expect(await violations(page, good, rule)).toEqual([]);
   });
 }
+
+test('rule justify-copy: each half is checked on its own', async ({ page }) => {
+  const noLink = '<main data-screen="justify"><h1>Day 358</h1><button data-primary>Save</button></main>';
+  expect((await violations(page, noLink, 'justify-copy')).map((v) => v.message)).toEqual([
+    'screen "justify": no [data-adjust-link] to adjust the next days',
+  ]);
+  const blame = '<main data-screen="justify"><p>You didn\'t finish.</p><button data-primary>Save</button><a href="#" data-adjust-link>Adjust</a></main>';
+  expect((await violations(page, blame, 'justify-copy')).map((v) => v.message)).toEqual(['screen "justify": blames the person ("You didn\'t")']);
+});
 
 test('rules ignore markup outside [data-screen] (legacy UI)', async ({ page }) => {
   await page.setContent(`<div><button style="height:20px">x</button><button data-primary>a</button><button data-primary>b</button>

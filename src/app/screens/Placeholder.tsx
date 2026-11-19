@@ -8,10 +8,8 @@ import { useNav } from '../nav';
 export const PLANNED_SCREENS: Record<string, { title: string; milestone: string }> = {
   workout: { title: 'Workout', milestone: 'M5' },
   'workout-log': { title: 'Workout log', milestone: 'M5' },
-  mood: { title: 'Mood check', milestone: 'M4' },
   drill: { title: 'Pause drill', milestone: 'M5' },
   rest: { title: 'Rest practice', milestone: 'M5' },
-  justify: { title: 'Close a missed day', milestone: 'M4' },
   history: { title: 'History', milestone: 'M6' },
   'settings-day': { title: 'Day', milestone: 'M6' },
   'settings-anchor': { title: 'Anchor', milestone: 'M6' },

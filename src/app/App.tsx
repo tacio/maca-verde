@@ -3,6 +3,8 @@ import { AppProvider, useApp } from './AppContext';
 import { NavProvider, initialView, intArg, parseFlow, useNav, type OnboardStep } from './nav';
 import { CycleScreen } from './screens/CycleScreen';
 import { DayScreen } from './screens/DayScreen';
+import { JustifyScreen } from './screens/JustifyScreen';
+import { MoodScreen } from './screens/MoodScreen';
 import { Onboarding } from './screens/Onboarding';
 import { PlaceholderScreen } from './screens/Placeholder';
 import { PlanScreen } from './screens/PlanScreen';
@@ -32,6 +34,13 @@ function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
         const day = intArg(args[0]) ?? record.today + (name === 'day-edit' ? 1 : 0);
         return <DayScreen key={flow} day={day} blank={args[1] === 'blank'} />;
       }
+      case 'mood':
+        return <MoodScreen key={flow} more={args[0] === 'more'} />;
+      case 'justify':
+        return <JustifyScreen />;
+      case 'preview':
+        // The workout preview is a sheet over Today, as a flow so back closes it.
+        return <TodayScreen preview={args[0]} />;
       default:
         return <PlaceholderScreen name={name} />;
     }

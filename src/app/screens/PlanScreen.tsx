@@ -79,9 +79,9 @@ export function PlanScreen() {
         ) : (
           <p className="rounded-card border border-dashed border-line p-4 text-base text-ink-muted">
             {now < first
-              ? `Approve it before day ${shortDay(cycle * 10, 3)} starts to earn a reserve.`
+              ? `Approve it before day ${shortDay(cycle * 10, 3)} starts to earn streak protection.`
               : openDays.length
-                ? `Days ${shortDay(openDays[0], 3)}–${shortDay(cycle * 10 + 9, 3)} can still be planned, without a reserve.`
+                ? `Days ${shortDay(openDays[0], 3)}–${shortDay(cycle * 10 + 9, 3)} can still be planned, without earning protection.`
                 : 'No plan for this cycle.'}
           </p>
         )}

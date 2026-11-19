@@ -13,6 +13,8 @@ export interface Nav {
   /** Top of the flow stack, or null when a tab is showing. */
   flow: string | null;
   open: (flow: string) => void;
+  /** Swap the top flow for another (e.g. workout preview → workout) without a back step to it. */
+  replace: (flow: string) => void;
   close: () => void;
 }
 
@@ -86,6 +88,14 @@ export function NavProvider({ initial, children }: { initial: InitialView; child
     window.scrollTo(0, 0);
   }, []);
 
+  const replace = useCallback((flow: string) => {
+    const top = last(stackRef.current);
+    if (!top) return;
+    if (top.pushed) window.history.replaceState({ flow }, '');
+    setStack((s) => [...s.slice(0, -1), { flow, pushed: top.pushed }]);
+    window.scrollTo(0, 0);
+  }, []);
+
   const close = useCallback(() => {
     const top = last(stackRef.current);
     if (!top) return;
@@ -99,8 +109,8 @@ export function NavProvider({ initial, children }: { initial: InitialView; child
   }, []);
 
   const value = useMemo<Nav>(
-    () => ({ tab, setTab, flow: last(stack)?.flow ?? null, open, close }),
-    [tab, setTab, stack, open, close],
+    () => ({ tab, setTab, flow: last(stack)?.flow ?? null, open, replace, close }),
+    [tab, setTab, stack, open, replace, close],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

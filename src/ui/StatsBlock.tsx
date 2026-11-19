@@ -5,7 +5,8 @@ export interface StatsBlockProps {
   streak: number;
   /** Shown as "best N" when given. */
   bestStreak?: number;
-  reserves: number;
+  /** Streak protection held; omit to hide it (Today never shows it). */
+  reserves?: number;
   reserveCap?: number;
   /** done / window, or null when there's no closed record day yet. */
   average: number | null;
@@ -24,7 +25,8 @@ export function formatAverage(average: number | null): string {
 }
 
 /**
- * Streak, reserves and the 100-day average, always together (P6). After a
+ * Streak and the 100-day average, always together (P6), plus streak
+ * protection (reserves) where it's shown — Progress, never Today. After a
  * broken streak (0) with history, the average is the dominant number.
  */
 export function StatsBlock({ streak, bestStreak, reserves, reserveCap = 2, average, averageDays, className }: StatsBlockProps) {
@@ -50,9 +52,9 @@ export function StatsBlock({ streak, bestStreak, reserves, reserveCap = 2, avera
     </div>
   );
 
-  const reservesCell = (
+  const reservesCell = reserves !== undefined && (
     <div data-reserves className="min-w-0">
-      <div role="img" aria-label={`${reserves} of ${reserveCap} reserves`} className="flex h-[1.875rem] items-end gap-1 pb-0.5">
+      <div role="img" aria-label={`Streak protection: ${reserves} of ${reserveCap}`} className="flex h-[1.875rem] items-end gap-1 pb-0.5">
         {Array.from({ length: reserveCap }, (_, i) => (
           <Diamond
             key={i}
@@ -63,7 +65,7 @@ export function StatsBlock({ streak, bestStreak, reserves, reserveCap = 2, avera
           />
         ))}
       </div>
-      <div className={label}>reserves</div>
+      <div className={label}>{reserves >= reserveCap ? 'protection full' : 'protection'}</div>
     </div>
   );
 
@@ -71,8 +73,13 @@ export function StatsBlock({ streak, bestStreak, reserves, reserveCap = 2, avera
     <div
       data-stats
       role="group"
-      aria-label="Streak, reserves and average"
-      className={cx('grid grid-cols-[1.2fr_1fr_1fr] items-end gap-3 rounded-card border border-line bg-surface p-4', className)}
+      aria-label={reservesCell ? 'Streak, average and streak protection' : 'Streak and average'}
+      className={cx(
+        'grid items-end',
+        reservesCell ? 'grid-cols-[1.2fr_1fr_1fr]' : 'grid-cols-2',
+        'gap-3 gap-3 rounded-card border border-line bg-surface p-4',
+        className,
+      )}
     >
       {averageHero ? averageCell : streakCell}
       {averageHero ? streakCell : averageCell}

@@ -19,15 +19,16 @@ The UI is being rebuilt. Read the design docs before touching UI or domain code:
 - New UI uses only design tokens (`src/styles/tokens.css` via `tailwind.config.js`): no hex/rgb/hsl, no Tailwind palette classes (`bg-slate-900`, `text-white`…). `lint:tokens` enforces it; its `LEGACY` list only shrinks.
 - English only in new UI; pt-BR/i18n is being removed.
 
-**Scenarios** (`src/dev/scenarios.ts`, dev builds only): `?scenario=<name>&now=<daykeep stamp>` replaces localStorage with the scenario's `storage` and moves the clock (`src/time/clock.ts`; all time reads go through `nowUnix()`). An optional `screen` field is passed as `&screen=<value>` to open a given screen. Flows take `:` arguments (`cycle:1436`, `day-edit:14362`, `day-edit:14362:blank`); `onboard-day|anchor|plan` opens an onboarding step. `shots` and `check:ux` run every registered scenario automatically, in light and dark at 412×915 (Pixel 8).
+**Scenarios** (`src/dev/scenarios.ts`, dev builds only): `?scenario=<name>&now=<daykeep stamp>` replaces localStorage with the scenario's `storage` and moves the clock (`src/time/clock.ts`; all time reads go through `nowUnix()`). An optional `screen` field is passed as `&screen=<value>` to open a given screen. Flows take `:` arguments (`cycle:1436`, `day-edit:14362`, `day-edit:14362:blank`, `preview:<itemId>` = workout preview sheet over Today, `mood:more` = mood check with "More" open); `onboard-day|anchor|plan` opens an onboarding step. `shots` and `check:ux` run every registered scenario automatically, in light and dark at 412×915 (Pixel 8).
 
 **DOM contract for new UI** (`tests/ux/helpers/rules.ts`; rules apply only to opted-in markup, so legacy UI is ignored):
 - `data-screen="<name>"` on each new screen root; per-screen rules and axe (WCAG 2.2 AA incl. contrast and target-size) are scoped to it. Scenarios without one are reported as skipped.
 - `data-primary` — exactly one visible per screen (P9). `data-nav` — bottom nav, ≤ 4 destinations (P9).
 - Interactive elements in a screen ≥ 48×48 CSS px (a checkbox/radio counts through its `<label>`); `data-hud-control` ≥ 72 px tall, ≤ 2 per screen (P12).
 - `data-hud-digits` — countdown; digit cap height ≥ 160 px (P12).
-- `data-streak` must sit in a `data-stats` container that also shows `data-average` and `data-reserves` (P6).
+- `data-streak` must sit in a `data-stats` container that also shows `data-average` (P6). `data-reserves` (UI copy: "streak protection", never "reserve") is optional and never shown on Today; no copy predicts protection before a day closes.
 - `data-target-input` (numeric target field) must sit in a `data-target` container with a visible, non-empty `data-last-hint` ("last 38 s · suggested 40 s" or "no data yet") (P3).
+- `data-screen="justify"`: visible text never matches `/\byou (failed|missed|didn'?t)\b/i`, and the screen has a `data-adjust-link` to edit the next days (P8).
 - Text blocks in a screen render ≤ 2 lines unless inside `data-disclosure` or `data-allow-long` (P10).
 - Speech/beep spy for workout tests: `installSpeechSpy(page)` → `spoken(page)`, `beeps(page)` (`tests/ux/helpers/speech-spy.ts`).
 

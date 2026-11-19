@@ -53,3 +53,14 @@ dialog.sheet[open]::backdrop {
     opacity: 0;
   }
 }
+
+/* Inline tick when a Today item completes (02-workflows §6: ≤ 300 ms). */
+.tick-in {
+  animation: tick-in var(--dur) var(--ease) both;
+}
+@keyframes tick-in {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}

@@ -7,10 +7,12 @@
  *   [data-nav]            bottom navigation, ≤ 4 destinations (P9)
  *   [data-hud-control]    big HUD control: ≥ 72 px tall, ≤ 2 per screen (P12)
  *   [data-hud-digits]     HUD countdown, digit cap height ≥ 160 px (P12)
- *   [data-stats] > [data-streak] + [data-average] + [data-reserves]  (P6)
+ *   [data-stats] > [data-streak] + [data-average]  (P6; [data-reserves] optional, never on Today)
  *   [data-disclosure]     text inside is exempt from the 2-line rule (P10)
  *   [data-allow-long]     text inside is exempt from the 2-line rule (P10)
  *   [data-target] > [data-target-input] + [data-last-hint]  numeric target shows the last actual (P3)
+ *   [data-screen="justify"]  no second-person blame ("you failed/missed/didn't") and a
+ *                            [data-adjust-link] to edit the next days (P8)
  */
 import type { Page } from '@playwright/test';
 
@@ -22,7 +24,8 @@ export type RuleName =
   | 'hud-digits'
   | 'streak'
   | 'text-lines'
-  | 'last-hint';
+  | 'last-hint'
+  | 'justify-copy';
 
 export interface Violation {
   rule: RuleName;
@@ -36,6 +39,7 @@ export const LIMITS = {
   hudCapHeight: 160,
   maxNav: 4,
   maxLines: 2.2,
+  blame: String.raw`\byou (failed|missed|didn'?t)\b`,
 } as const;
 
 /** Runs every DOM rule in the page and returns all violations. */
@@ -109,6 +113,13 @@ export async function checkDom(page: Page): Promise<Violation[]> {
       }
     }
 
+    // P8 — justification asks about the plan, not the person, and offers to adjust the next days.
+    for (const screen of screens.filter((s) => s.dataset.screen === 'justify')) {
+      const m = screen.innerText.match(new RegExp(L.blame, 'i'));
+      if (m) add('justify-copy', `screen "justify": blames the person ("${m[0]}")`);
+      if (!screen.querySelector('[data-adjust-link]')) add('justify-copy', 'screen "justify": no [data-adjust-link] to adjust the next days');
+    }
+
     // P9 — bottom nav.
     for (const nav of [...document.querySelectorAll('[data-nav]')].filter(visible)) {
       const dest = [...nav.querySelectorAll('a[href], button, [role=tab], [role=link]')].filter(visible);
@@ -126,14 +137,14 @@ export async function checkDom(page: Page): Promise<Violation[]> {
         add('hud-digits', `[data-hud-digits] cap height ${px(cap)} (font-size ${cs.fontSize}), needs ≥ ${L.hudCapHeight}px`);
     }
 
-    // P6 — streak always with average and reserves in the same [data-stats].
+    // P6 — streak always with the average in the same [data-stats] (streak protection is optional).
     for (const el of [...document.querySelectorAll('[data-streak]')].filter(visible)) {
       const stats = el.closest('[data-stats]');
       if (!stats) {
         add('streak', `${describe(el)}: [data-streak] outside a [data-stats] container`);
         continue;
       }
-      for (const need of ['data-average', 'data-reserves'])
+      for (const need of ['data-average'])
         if (![...stats.querySelectorAll(`[${need}]`)].some(visible))
           add('streak', `${describe(el)}: [data-stats] has no visible [${need}] next to [data-streak]`);
     }

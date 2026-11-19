@@ -22,7 +22,11 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      // Focus the sheet itself (it's labelled by its title), not its first button.
+      dialog.focus();
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
@@ -30,6 +34,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
     <dialog
       ref={ref}
       aria-labelledby={titleId}
+      tabIndex={-1}
       onClose={onClose}
       onCancel={(e) => {
         e.preventDefault();
@@ -39,7 +44,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         // The dialog element itself is only hit outside the panel (backdrop).
         if (e.target === e.currentTarget) onClose();
       }}
-      className="sheet m-0 mt-auto max-h-[85dvh] w-full max-w-none bg-transparent p-0 text-ink sm:mx-auto sm:max-w-md"
+      className="sheet m-0 mt-auto outline-none max-h-[85dvh] w-full max-w-none bg-transparent p-0 text-ink sm:mx-auto sm:max-w-md"
     >
       <div className="flex max-h-[85dvh] flex-col rounded-t-sheet border border-b-0 border-line bg-surface pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center gap-2 py-2 pl-5 pr-2">

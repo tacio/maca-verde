@@ -41,6 +41,26 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
     expect(r.streak).toBe(16);
   },
   halt: (r) => expect(r.todayEval.status).toBe('today'),
+  'today-recovery-done': (r) => {
+    expect(r).toMatchObject({ isRecoveryDay: true, pendingJustifications: [] });
+    expect(r.todayEval.status).toBe('done');
+  },
+  'workout-preview': (r) => expect(r.todayEval.items[0].item).toMatchObject({ id: `${r.today}-0`, kind: 'workout' }),
+  mood: (r) => expect(r.todayEval.items.some((p) => p.item.kind === 'mood' && !p.satisfied)).toBe(true),
+  'mood-more': (r) => expect(r.todayEval.status).toBe('today'),
+  justify: (r) => {
+    expect(r.pendingJustifications).toEqual([r.today - 1]);
+    expect(r.protectedDays).toEqual([r.today - 1]);
+  },
+  'justify-broken': (r) => {
+    expect(r.pendingJustifications).toEqual([r.today - 1]);
+    expect(r.brokenDays).toEqual([r.today - 1]);
+  },
+  'justify-stack': (r) => expect(r.pendingJustifications).toHaveLength(3),
+  'cycle-tomorrow': (r) => {
+    expect(r.today).toBe(14359);
+    expect(r.todayEval.status).toBe('done');
+  },
   'missed-yesterday': (r) => {
     expect(r.pendingJustifications).toEqual([r.today - 1]);
     expect(r.protectedDays).toEqual([r.today - 1]);
