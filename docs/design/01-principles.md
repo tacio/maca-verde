@@ -79,8 +79,8 @@ The home screen is today's plan as a short checklist with one completion indicat
 
 ### P12 — Audio first, glance second, hands free during workouts
 - **Evidence.** HCI studies of runners find audio guidance effective and less distracting than visual elements; cognitive load depends on how complex simultaneous sounds are (multiple small studies, e.g. Keep the Beat; SportsHCI 2025) ●○○. Touch error rates level off at ~9.2–9.6 mm targets for thumb use (Parhi et al. 2006) ●●○; Android guidance: ≥ 48 dp (~9 mm) ●○○. Legible size scales with distance: fluent reading spans ~0.2–2° of visual angle (Legge & Bigelow 2011) ●●○.
-- **Apply.** Every state change is spoken (exercise name, cue, 3-2-1, rest, next). One sound at a time. The screen shows **only** the current exercise, the remaining seconds, and a progress strip. At ~3 m, 0.5° ≈ 26 mm ≈ 165 CSS px on a Pixel 8 (≈ 6.4 CSS px/mm), so the countdown shows bare seconds ("20"), not "0:20". The only mid-workout controls are pause and skip, full-width at the bottom.
-- **Check.** HUD countdown digit cap height ≥ 160 CSS px at 412 px width; HUD has ≤ 2 controls, each ≥ 72 CSS px tall; each phase change triggers a speech call; all other tap targets ≥ 48 CSS px.
+- **Apply.** Every state change is spoken (exercise name, cue, 3-2-1, rest, next). One sound at a time. The screen shows **only** the current exercise, the remaining seconds, and a progress strip. At ~3 m, 0.5° ≈ 26 mm ≈ 165 CSS px on a Pixel 8 (≈ 6.4 CSS px/mm), so the countdown shows bare seconds ("20"), not "0:20". The only mid-workout control is **Pause**, full-width at the bottom (its sheet: Resume, End workout). **No skipping**: work and rest intervals always run their full time — skipping is bargaining with an approved plan.
+- **Check.** HUD countdown digit cap height ≥ 160 CSS px at 412 px width; HUD has exactly 1 control (Pause), ≥ 72 CSS px tall; no skip control in any timed flow; each phase change triggers a speech call; all other tap targets ≥ 48 CSS px.
 
 ## D. Feeling
 

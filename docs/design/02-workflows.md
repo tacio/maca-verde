@@ -75,8 +75,8 @@ Every current feature, mapped to the new design.
 | Daily overload challenge (rotation by `streak % 3`) | **Keep logic, move** | Becomes the engine's suggestion when pre-filling a cycle: same three-way rotation (posture / Tabata / rope), now by day number; same target formulas (hang PR + 2 s, rope turns) |
 | Motivational quotes | **Cut** | Clutter (brief pain #2) |
 | Custom routine builder | **Keep, move** | Plan → Routines (secondary) |
-| Workout HUD | **Rebuild** | P12: current exercise, bare seconds, progress strip; pause + skip only |
-| HUD sound / voice toggles, skip-back | **Move / cut** | Toggles to Settings; skip-back cut (≤ 2 controls) |
+| Workout HUD | **Rebuild** | P12: current exercise, bare seconds, progress strip; Pause only — no skipping (day 14359) |
+| HUD sound / voice toggles, skip-back | **Move / cut** | Toggles to Settings; skip and skip-back cut |
 | Post-workout modal (RPE, neck, rope, hang, notes) | **Rebuild** | Log screen pre-filled from the timer; asks only for what targets need + RPE + neck (P11) |
 | Drill offer after workout ("pulse is high") | **Keep** | Shown only if a drill is still due today — pairs the methodology's elevated-HR drill with the workout |
 | Auto Drive backup after workout | **Keep** | Silent; status in Settings |
@@ -202,7 +202,7 @@ Entry: a card on Today from 3 days before the next cycle starts, and Plan → "N
 │                                   │
 │          next: Hanging knees      │
 │                                   │
-│ [      Pause      ][   Skip   ]   │
+│ [            Pause             ]  │
 └───────────────────────────────────┘
 ```
 

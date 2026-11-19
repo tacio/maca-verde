@@ -51,6 +51,7 @@ Reserves must never feel like a budget to use. They are insurance, not currency.
 | Plan items | Workouts (routine + numeric targets; several per day allowed) · rest practices (timed: meditation, silence…) · mood check-ins (count per day) · pause drills (count per day). A plan is never empty — rest is planned too |
 | Workout targets | Proposed by the overload engine, accepted or adjusted by me. Measurable: total time, rounds, dead-hang seconds, rope turns. Methodology refinements are a later sprint |
 | Rest days | A day without workouts is valid if it holds other items, e.g. a timed rest practice |
+| No skipping | Timed flows (workout intervals, work and rest alike; rest practice; drill steps) always run their full time. No skip or fast-forward controls — only Pause and an honest End |
 | Early stop | A workout or rest practice ended early never satisfies its item; a retry must be the full session |
 | Editing & lock | Day N's plan is editable until N.0000; it is locked for the whole of day N. What "done" means never changes once the day has started. Early on, plans will be recalibrated downward between days — this is expected |
 | No plan | A day without an approved plan is a failed day |
