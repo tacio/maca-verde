@@ -107,7 +107,6 @@ describe('copy', () => {
   it('a calm note only when the item stays open', () => {
     expect(shortNote(result())).toBeNull();
     expect(shortNote(result({ completedFull: false, shortBy: 'ended' }))).toBe('Ended early — the item stays open; a full session completes it.');
-    expect(shortNote(result({ completedFull: false, shortBy: 'skipped' }))).toMatch(/skipped — the item stays open/);
   });
 
   it('hint shows the last actual and the target (P3)', () => {

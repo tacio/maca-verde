@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, SkipForward, Square } from 'lucide-react';
+import { Pause, Play, Square } from 'lucide-react';
 import { EXERCISES } from '../../data/exercises';
 import { phaseAnnouncement } from '../../audio/announce';
 import { coach } from '../../audio/coach';
@@ -24,7 +24,6 @@ import {
   progress,
   remainingMs,
   resume,
-  skip,
   startRun,
   summarize,
   tick,
@@ -70,7 +69,8 @@ function initialRun(phases: Phase[], start: HudStart | undefined): Run {
 /**
  * Workout HUD (J4, P12): glanceable from 3 m, hands-free. Only the round and
  * position, a progress strip, the exercise, bare seconds and what's next;
- * work and rest differ by full-screen color. Two controls: Pause and Skip.
+ * work and rest differ by full-screen color. One control: Pause — nothing is
+ * skipped, not even rest; ending early (from the pause sheet) is the only exit.
  * Every phase change is announced by the coach; the time is derived from
  * timestamps, so it never drifts and survives backgrounding.
  */
@@ -146,7 +146,6 @@ function Hud({ item, routine, start }: { item: WorkoutItem; routine: WorkoutRout
     setRun(r);
     setSheet(false);
   };
-  const skipNow = () => apply(skip(phases, runRef.current, nowMs()));
   const endNow = () => {
     coach.stop();
     setSheet(false);
@@ -204,36 +203,21 @@ function Hud({ item, routine, start }: { item: WorkoutItem; routine: WorkoutRout
           <p className="text-2xl font-medium">{nextText}</p>
         </main>
 
-        <div className="grid grid-cols-[3fr_2fr] gap-3">
-          <button
-            type="button"
-            data-hud-control
-            data-primary={sheet ? undefined : ''}
-            onClick={pauseNow}
-            disabled={finished}
-            className={cx(
-              'flex min-h-24 items-center justify-center gap-2 rounded-card text-2xl font-semibold',
-              'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-current',
-              TONE[tone].solid,
-            )}
-          >
-            <Pause aria-hidden size={28} strokeWidth={2.25} />
-            Pause
-          </button>
-          <button
-            type="button"
-            data-hud-control
-            onClick={skipNow}
-            disabled={finished}
-            className={cx(
-              'flex min-h-24 items-center justify-center gap-2 rounded-card border-2 border-current text-2xl font-semibold',
-              'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-current',
-            )}
-          >
-            <SkipForward aria-hidden size={26} strokeWidth={2.25} />
-            Skip
-          </button>
-        </div>
+        <button
+          type="button"
+          data-hud-control
+          data-primary={sheet ? undefined : ''}
+          onClick={pauseNow}
+          disabled={finished}
+          className={cx(
+            'flex min-h-24 w-full items-center justify-center gap-2 rounded-card text-2xl font-semibold',
+            'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-current',
+            TONE[tone].solid,
+          )}
+        >
+          <Pause aria-hidden size={28} strokeWidth={2.25} />
+          Pause
+        </button>
       </div>
 
       <Sheet

@@ -5,7 +5,7 @@
  *   [data-screen="name"]  root of a new screen; per-screen rules are scoped to it
  *   [data-primary]        the one primary action of a screen (P9)
  *   [data-nav]            bottom navigation, ≤ 4 destinations (P9)
- *   [data-hud-control]    big HUD control: ≥ 72 px tall, ≤ 2 per screen (P12)
+ *   [data-hud-control]    the HUD control (Pause): ≥ 72 px tall, at most 1 per screen (P12)
  *   [data-hud-digits]     HUD countdown, digit cap height ≥ 160 px (P12)
  *   [data-stats] > [data-streak] + [data-average]  (P6; [data-reserves] optional, never on Today)
  *   [data-disclosure]     text inside is exempt from the 2-line rule (P10)
@@ -13,6 +13,7 @@
  *   [data-target] > [data-target-input] + [data-last-hint]  numeric target shows the last actual (P3)
  *   [data-screen="justify"]  no second-person blame ("you failed/missed/didn't") and a
  *                            [data-adjust-link] to edit the next days (P8)
+ *   [data-screen="workout|rest|drill"]  timed flows: no visible button/link named "skip" (P12)
  */
 import type { Page } from '@playwright/test';
 
@@ -25,7 +26,8 @@ export type RuleName =
   | 'streak'
   | 'text-lines'
   | 'last-hint'
-  | 'justify-copy';
+  | 'justify-copy'
+  | 'no-skip';
 
 export interface Violation {
   rule: RuleName;
@@ -35,11 +37,13 @@ export interface Violation {
 export const LIMITS = {
   target: 48,
   hudControl: 72,
-  maxHudControls: 2,
+  maxHudControls: 1,
   hudCapHeight: 160,
   maxNav: 4,
   maxLines: 2.2,
   blame: String.raw`\byou (failed|missed|didn'?t)\b`,
+  skip: String.raw`\bskip\b`,
+  timedScreens: ['workout', 'rest', 'drill'],
 } as const;
 
 /** Runs every DOM rule in the page and returns all violations. */
@@ -118,6 +122,15 @@ export async function checkDom(page: Page): Promise<Violation[]> {
       const m = screen.innerText.match(new RegExp(L.blame, 'i'));
       if (m) add('justify-copy', `screen "justify": blames the person ("${m[0]}")`);
       if (!screen.querySelector('[data-adjust-link]')) add('justify-copy', 'screen "justify": no [data-adjust-link] to adjust the next days');
+    }
+
+    // P12 — no skipping in timed flows: the plan is followed or ended early, never bargained.
+    for (const screen of screens.filter((s) => (L.timedScreens as readonly string[]).includes(s.dataset.screen ?? ''))) {
+      const controls = [...screen.querySelectorAll('button, a[href], [role=button], [role=link]')].filter(visible);
+      for (const el of controls) {
+        const label = el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || '';
+        if (new RegExp(L.skip, 'i').test(label)) add('no-skip', `screen "${screen.dataset.screen}": ${describe(el)} offers skipping`);
+      }
     }
 
     // P9 — bottom nav.

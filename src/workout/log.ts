@@ -113,9 +113,7 @@ export function logHeader(name: string, r: WorkoutResult, cfg: DayConfig): strin
 /** The calm line under the header when the session can't complete the item, or null. */
 export function shortNote(r: WorkoutResult): string | null {
   if (r.completedFull) return null;
-  return r.shortBy === 'skipped'
-    ? 'An exercise was skipped — the item stays open; a full session completes it.'
-    : 'Ended early — the item stays open; a full session completes it.';
+  return 'Ended early — the item stays open; a full session completes it.';
 }
 
 /** "last 320 · target 350" for a log field (P3); "no data yet · target 350". */

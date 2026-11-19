@@ -33,7 +33,8 @@ import { useClockMs } from '../timers';
 /**
  * Pause drill (J6): Elevate → Freeze → Sigh → Scenario, full-screen and
  * voice-guided; one instruction line per step, the science behind "Why?".
- * `from` starts later: after a workout the flow is `drill:after-workout`
+ * Timed steps (Elevate, Freeze, Sigh) can't be advanced early: they move on
+ * when their timer ends. `from` starts later: after a workout the flow is `drill:after-workout`
  * (starts at Freeze, pulse already up); dev scenarios use `drill:<step>`.
  */
 export function DrillScreen({ from, afterWorkout }: { from: DrillStep; afterWorkout: boolean }) {
@@ -121,8 +122,9 @@ export function DrillScreen({ from, afterWorkout }: { from: DrillStep; afterWork
         Finish
       </Button>
     ) : (
-      <Button variant="primary" full onClick={goNext}>
-        Next
+      // Timed steps can't be cut short (P12): they advance on their own when the timer ends.
+      <Button variant="primary" full disabled>
+        {step === 'sigh' ? 'Next when the breaths end' : `Next in ${secs} s`}
       </Button>
     );
 

@@ -93,7 +93,7 @@ Each scenario is captured in **light and dark** at **412×915** (Pixel 8); a des
 | P9 | Exactly one `[data-primary]` per screen; bottom nav ≤ 4 | check:ux |
 | P10 | No visible text block > 2 lines outside an open disclosure | check:ux (line count via layout) |
 | P11 | Mood default path ≤ 3 taps; log ≤ 3 required inputs | check:ux (scripted flow) |
-| P12 | HUD digit cap height ≥ 160 px; ≤ 2 controls ≥ 72 px; targets ≥ 48 px elsewhere; every phase change calls `speak` | check:ux + speech spy |
+| P12 | HUD digit cap height ≥ 160 px; 1 control (Pause) ≥ 72 px, no skip in workout/rest/drill; targets ≥ 48 px elsewhere; every phase change calls `speak` | check:ux + speech spy |
 | P13 | Contrast ≥ 4.5:1 both themes; no raw colors outside tokens; celebration only on listed events | axe + token lint + vitest |
 
 Some checks (P5 ordering, P8 tone, overall calm) still need eyes; the contact sheet covers them.

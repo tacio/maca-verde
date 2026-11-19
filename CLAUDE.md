@@ -24,7 +24,7 @@ The UI is being rebuilt. Read the design docs before touching UI or domain code:
 **DOM contract for new UI** (`tests/ux/helpers/rules.ts`; rules apply only to opted-in markup, so legacy UI is ignored):
 - `data-screen="<name>"` on each new screen root; per-screen rules and axe (WCAG 2.2 AA incl. contrast and target-size) are scoped to it. Scenarios without one are reported as skipped.
 - `data-primary` — exactly one visible per screen (P9). `data-nav` — bottom nav, ≤ 4 destinations (P9).
-- Interactive elements in a screen ≥ 48×48 CSS px (a checkbox/radio counts through its `<label>`); `data-hud-control` ≥ 72 px tall, ≤ 2 per screen (P12).
+- Interactive elements in a screen ≥ 48×48 CSS px (a checkbox/radio counts through its `<label>`); `data-hud-control` ≥ 72 px tall, at most 1 per screen — Pause is the only HUD control (P12). In `data-screen="workout|rest|drill"` no visible button/link may be named "skip" (no skipping in timed flows, P12).
 - `data-hud-digits` — countdown; digit cap height ≥ 160 px (P12).
 - `data-streak` must sit in a `data-stats` container that also shows `data-average` (P6). `data-reserves` (UI copy: "streak protection", never "reserve") is optional and never shown on Today; no copy predicts protection before a day closes.
 - `data-target-input` (numeric target field) must sit in a `data-target` container with a visible, non-empty `data-last-hint` ("last 38 s · suggested 40 s" or "no data yet") (P3).

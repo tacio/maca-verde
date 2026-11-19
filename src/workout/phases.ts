@@ -72,15 +72,13 @@ export interface Run {
   since: number | null;
   /** Time actually spent in each phase (ms); full length once completed. */
   spentMs: number[];
-  /** Phases the user skipped. */
-  skipped: number[];
   /** Ended early by the user. */
   ended: boolean;
 }
 
 export function startRun(phases: Phase[], now: number, at = 0): Run {
   const spentMs = phases.map((p, i) => (i < at ? p.seconds * 1000 : 0));
-  return { index: Math.min(at, phases.length), elapsedMs: 0, since: at < phases.length ? now : null, spentMs, skipped: [], ended: false };
+  return { index: Math.min(at, phases.length), elapsedMs: 0, since: at < phases.length ? now : null, spentMs, ended: false };
 }
 
 export const isFinished = (phases: Phase[], run: Run) => run.index >= phases.length;
@@ -138,19 +136,6 @@ export function resume(phases: Phase[], run: Run, now: number): Run {
   return { ...run, since: now };
 }
 
-/** Skip the rest of the current phase; keeps the paused/running state. */
-export function skip(phases: Phase[], run: Run, now: number): Step {
-  if (isFinished(phases, run)) return { run, entered: [] };
-  const spentMs = run.spentMs.slice();
-  spentMs[run.index] = phaseElapsedMs(run, now);
-  const index = run.index + 1;
-  const running = run.since !== null;
-  return {
-    run: { ...run, index, spentMs, skipped: [...run.skipped, run.index], elapsedMs: 0, since: running && index < phases.length ? now : null },
-    entered: [index],
-  };
-}
-
 /** End early: the current phase keeps the time spent in it. */
 export function end(run: Run, now: number): Run {
   const spentMs = run.spentMs.slice();
@@ -158,7 +143,7 @@ export function end(run: Run, now: number): Run {
   return { ...run, spentMs, elapsedMs: phaseElapsedMs(run, now), since: null, ended: true };
 }
 
-/** Share of the planned time behind us (skipped phases count as passed), 0–1. */
+/** Share of the planned time behind us 0–1. */
 export function progress(phases: Phase[], run: Run, now: number): number {
   const total = plannedSeconds(phases) * 1000;
   if (total === 0) return 1;
@@ -175,10 +160,10 @@ export interface RunSummary {
   activeSeconds: number;
   roundsCompleted: number;
   totalRounds: number;
-  /** Every phase ran to its end and no work phase was skipped. */
+  /** Every phase ran to its end (no skipping exists: P12). */
   completedFull: boolean;
-  /** Why not full: ended by the user, or a work phase was skipped. */
-  shortBy: 'ended' | 'skipped' | null;
+  /** Why not full: ended early by the user (the only way a session is short). */
+  shortBy: 'ended' | null;
   ropeSeconds: number;
   /** Longest single dead hang (s), from the timer. */
   longestHangSeconds: number;
@@ -187,7 +172,7 @@ export interface RunSummary {
 }
 
 export function summarize(phases: Phase[], run: Run, totalRounds: number): RunSummary {
-  const full = (i: number) => !run.skipped.includes(i) && run.spentMs[i] >= phases[i].seconds * 1000;
+  const full = (i: number) => run.spentMs[i] >= phases[i].seconds * 1000;
   let spent = 0;
   let rope = 0;
   let hang = 0;
@@ -204,15 +189,14 @@ export function summarize(phases: Phase[], run: Run, totalRounds: number): RunSu
     if (isDeadHang(p.exerciseId)) hang = Math.max(hang, ms);
     roundOk.set(p.round, (roundOk.get(p.round) ?? true) && full(i));
   });
-  const skippedWork = run.skipped.some((i) => phases[i]?.kind === 'work');
   const finished = isFinished(phases, run) && !run.ended;
-  const completedFull = finished && !skippedWork && phases.length > 0;
+  const completedFull = finished && phases.length > 0;
   return {
     activeSeconds: Math.round(spent / 1000),
     roundsCompleted: [...roundOk.values()].filter(Boolean).length,
     totalRounds,
     completedFull,
-    shortBy: completedFull ? null : run.ended || !finished ? 'ended' : 'skipped',
+    shortBy: completedFull ? null : 'ended',
     ropeSeconds: Math.round(rope / 1000),
     longestHangSeconds: Math.round(hang / 1000),
     workFraction: plannedWork === 0 ? 0 : Math.min(1, work / plannedWork),

@@ -11,7 +11,6 @@ import {
   progress,
   remainingMs,
   resume,
-  skip,
   startRun,
   summarize,
   tick,
@@ -112,17 +111,6 @@ describe('run', () => {
     expect(tick(phases, r, 106 * S).entered).toEqual([1]);
   });
 
-  it('skip moves to the next phase, keeping paused/running', () => {
-    const r = startRun(phases, 0);
-    const s = skip(phases, r, 2 * S);
-    expect(s.entered).toEqual([1]);
-    expect(s.run.skipped).toEqual([0]);
-    expect(remainingMs(phases, s.run, 2 * S)).toBe(20 * S);
-    const p = skip(phases, pause(r, 2 * S), 50 * S);
-    expect(p.run.since).toBeNull();
-    expect(remainingMs(phases, p.run, 80 * S)).toBe(20 * S);
-  });
-
   it('progress counts planned time behind us', () => {
     const r = startRun(phases, 0);
     expect(progress(phases, r, 0)).toBe(0);
@@ -174,15 +162,6 @@ describe('summarize', () => {
     expect(summarize(phases, r, 2)).toMatchObject({ activeSeconds: 3, roundsCompleted: 0, completedFull: false, workFraction: 0 });
   });
 
-  it('skipping rests is free; skipping work breaks completedFull and that round', () => {
-    let r = startRun(phases, 0);
-    r = skip(phases, r, 1 * S).run; // prep
-    const restSkipped = tick(phases, skip(phases, tick(phases, r, 21 * S).run, 22 * S).run, 500 * S).run;
-    expect(summarize(phases, restSkipped, 2)).toMatchObject({ completedFull: true, roundsCompleted: 2 });
-
-    const workSkipped = tick(phases, skip(phases, r, 5 * S).run, 500 * S).run; // skip boxer skip, round 1
-    expect(summarize(phases, workSkipped, 2)).toMatchObject({ completedFull: false, shortBy: 'skipped', roundsCompleted: 1, ropeSeconds: 24 });
-  });
 });
 
 describe('nextLine', () => {

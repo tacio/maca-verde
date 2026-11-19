@@ -41,12 +41,14 @@ const CASES: { rule: RuleName; bad: string; good: string }[] = [
   {
     rule: 'hud-controls',
     bad: screen(
-      '<button data-primary data-hud-control style="height:72px">Pause</button>' +
-        '<button data-hud-control style="height:60px">Skip</button><button data-hud-control style="height:72px">Stop</button>',
+      '<button data-primary data-hud-control style="height:72px">Pause</button><button data-hud-control style="height:72px">Stop</button>',
     ),
-    good: screen(
-      '<button data-primary data-hud-control style="height:72px">Pause</button><button data-hud-control style="height:80px">Skip</button>',
-    ),
+    good: screen('<button data-primary data-hud-control style="height:72px;width:100%">Pause</button>'),
+  },
+  {
+    rule: 'no-skip',
+    bad: '<main data-screen="workout"><button data-primary>Pause</button><button>Skip</button></main>',
+    good: '<main data-screen="workout"><button data-primary>Pause</button><button>End workout</button></main>',
   },
   {
     rule: 'hud-digits',

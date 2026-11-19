@@ -2,7 +2,7 @@
  * Pause drill (J6): the legacy think-before-speak methodology in four steps —
  * Elevate (raise the pulse) → Freeze (don't react) → Sigh (paced
  * physiological sigh) → Scenario (choose the paused reply). Elevate is
- * skipped when the drill follows a workout: the pulse is already up.
+ * left out when the drill follows a workout: the pulse is already up.
  * Pure; unit-tested in drill.test.ts.
  */
 

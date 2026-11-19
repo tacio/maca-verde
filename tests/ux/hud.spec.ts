@@ -54,7 +54,7 @@ test('each phase change is announced once; work and rest differ by color', async
   expect((await beeps(page)).length).toBeGreaterThan(0);
 });
 
-test('skip announces the next phase once; pause opens the sheet and silences the coach', async ({ page, context, baseURL }) => {
+test('Pause is the only HUD control: it opens the sheet and silences the coach', async ({ page, context, baseURL }) => {
   await blockExternal(context, new URL(baseURL!).origin);
   await installSpeechSpy(page);
   await page.clock.install();
@@ -63,15 +63,15 @@ test('skip announces the next phase once; pause opens the sheet and silences the
   await page.clock.runFor(1000);
   const before = (await spoken(page)).length;
 
-  await page.getByRole('button', { name: 'Skip' }).click();
-  await page.clock.runFor(1500);
-  await expect(screen(page)).toHaveAttribute('data-phase', 'rest');
-  expect((await spoken(page)).length).toBe(before + 1);
+  await expect(page.locator('[data-hud-control]')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /skip/i })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Pause' }).click();
-  await expect(page.getByRole('dialog', { name: 'Paused' })).toBeVisible();
+  const sheet = page.getByRole('dialog', { name: 'Paused' });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole('button', { name: /skip/i })).toHaveCount(0);
   const shown = await digits(page);
   await page.clock.runFor(30_000);
   expect(await digits(page), 'paused time stands still').toBe(shown);
-  expect((await spoken(page)).length).toBe(before + 1);
+  expect((await spoken(page)).length).toBe(before);
 });
