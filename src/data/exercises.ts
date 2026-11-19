@@ -1,4 +1,4 @@
-import { Exercise } from '../types/fitness';
+import type { Exercise } from '../domain/types';
 
 export const EXERCISES: Record<string, Exercise> = {
   // === DOOR PULL-UP BAR EXERCISES ===

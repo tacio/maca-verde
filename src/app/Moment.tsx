@@ -6,7 +6,7 @@ export const MOMENT_MS = 1600;
 
 export interface MomentProps {
   icon: LucideIcon;
-  /** Filled icon (e.g. the reserve diamond). */
+  /** Filled icon. */
   fillIcon?: boolean;
   title: string;
   body: ReactNode;

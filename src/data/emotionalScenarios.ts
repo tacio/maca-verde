@@ -1,4 +1,4 @@
-import { ProvocationScenario } from '../types/mood';
+import type { ProvocationScenario } from '../domain/types';
 
 export const EMOTIONAL_SCENARIOS: ProvocationScenario[] = [
   {

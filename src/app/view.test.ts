@@ -4,7 +4,22 @@ import { computeRecord, type ItemProgress } from '../domain/record';
 import { POSTURE_ROUTINE_ID, ROPE_ROUTINE_ID, TABATA_ROUTINE_ID } from '../domain/engine';
 import type { PlanItem } from '../domain/types';
 import { buildFixture } from '../dev/fixtures';
-import { actionText, classifyDay, daySummary, itemText, lastHundredGrid, nextItem, progressText, targetsText } from './view';
+import {
+  actionText,
+  approvedMomentText,
+  classifyDay,
+  cleanCycleDue,
+  cycleRowMeta,
+  dayDoneKind,
+  daySummary,
+  isRareDay,
+  itemText,
+  lastHundredGrid,
+  nextItem,
+  planApproveHint,
+  progressText,
+  targetsText,
+} from './view';
 
 const cfg = DEFAULT_CONFIG;
 const tabata: PlanItem = { id: 'a', kind: 'workout', routineId: TABATA_ROUTINE_ID, targets: { rounds: 2 } };
@@ -92,5 +107,69 @@ describe('100-day grid', () => {
     const f = buildFixture({ history: '.', today: 14355 });
     const record = computeRecord({ ...f.data, plans: [], cycles: [] }, f.now, f.config);
     expect(classifyDay(14355, record)).toBe('outside');
+  });
+});
+
+describe('streak protection copy at the cap', () => {
+  const all = (held: number) => [
+    cycleRowMeta(held),
+    planApproveHint(14360, held),
+    ...Object.values(approvedMomentText(1436, true, held, [14360, 14369])).filter((v) => typeof v === 'string'),
+    ...Object.values(approvedMomentText(1436, false, held, [14361, 14369])).filter((v) => typeof v === 'string'),
+  ];
+
+  it('earns +1 below the cap', () => {
+    expect(approvedMomentText(1436, true, 1, [14360]).title).toBe('+1 protection');
+    expect(approvedMomentText(1436, true, 1, [14360]).earned).toBe(true);
+    expect(planApproveHint(14360, 0)).toBe('Approve it before day 360 starts to earn streak protection.');
+    expect(cycleRowMeta(0)).not.toMatch(/protection/i); // Today never mentions protection
+  });
+
+  it('says "protection full" at 2 and never "+1"', () => {
+    for (const held of [2, 3]) {
+      const t = approvedMomentText(1436, true, held, [14360]);
+      expect(t.earned).toBe(false);
+      expect(t.body).toMatch(/protection full/i);
+      expect(planApproveHint(14360, held)).toMatch(/protection is full/i);
+      expect(cycleRowMeta(held)).not.toMatch(/protection|earn/i);
+      for (const text of all(held)) expect(text).not.toMatch(/\+1/);
+    }
+  });
+
+  it('never frames protection as lost or wasted, never says "reserve"', () => {
+    for (const held of [0, 1, 2]) for (const text of all(held)) expect(text).not.toMatch(/\b(lost|lose|wasted?|reserves?)\b/i);
+  });
+});
+
+describe('celebrations', () => {
+  it('a clean cycle is due once, on the first open after it closes', () => {
+    // Record 14340–14349 all done; today 14350 starts the next cycle.
+    const f = buildFixture({ history: '.' + 'D'.repeat(10) + 'T', today: 14350, cleanCycleDue: true });
+    const record = computeRecord(f.data, f.now, f.config);
+    expect(cleanCycleDue(record, undefined)).toBe(1434);
+    expect(cleanCycleDue(record, 1433)).toBe(1434);
+    expect(cleanCycleDue(record, 1434)).toBeNull();
+  });
+
+  it('a protected miss makes a cycle not clean', () => {
+    const f = buildFixture({ history: '.' + 'D'.repeat(5) + 'M' + 'D'.repeat(4) + 'T', today: 14350, cleanCycleDue: true });
+    const record = computeRecord(f.data, f.now, f.config);
+    expect(record.protectedDays).toEqual([14345]);
+    expect(cleanCycleDue(record, undefined)).toBeNull();
+  });
+
+  it('fixtures mark the last closed cycle as already celebrated', () => {
+    expect(buildFixture({ history: '.' + 'D'.repeat(10) + 'T', today: 14350 }).data.settings.cleanCycleShown).toBe(1434);
+  });
+
+  it('the rare day-done variant is about 1 day in 10, fixed per day', () => {
+    const rare = Array.from({ length: 1000 }, (_, i) => 14000 + i).filter(isRareDay);
+    expect(rare.length).toBeGreaterThan(70);
+    expect(rare.length).toBeLessThan(130);
+    expect(isRareDay(14353)).toBe(true);
+    expect(isRareDay(14355)).toBe(false);
+    expect(dayDoneKind(14353, false)).toBe('rare');
+    expect(dayDoneKind(14353, true)).toBe('recovery');
+    expect(dayDoneKind(14355, false)).toBe('plain');
   });
 });

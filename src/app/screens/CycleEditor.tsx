@@ -13,10 +13,10 @@ import { DayCell } from '../DayCell';
 import { Moment } from '../Moment';
 import { CountBadge } from '../ItemIcon';
 import { useNav } from '../nav';
-import type { CellKind } from '../view';
+import { approvedMomentText, protectionFull, type CellKind } from '../view';
 
 export interface CycleLayoutProps {
-  /** "Starts in .6596 · approve for +1 ◆" */
+  /** "Starts in .6596 · approve for +1 ◆" (or "· protection full" at the cap) */
   subtitle: ReactNode;
   footer: ReactNode;
   children: ReactNode;
@@ -65,6 +65,8 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
   let subtitle: ReactNode;
   if (approval) subtitle = `Approved at ${shortStamp(approval.approvedUnix, cfg)}`;
   else if (unstarted.length === 0) subtitle = 'Every day has started';
+  else if (onTime && protectionFull(record.reservesHeld))
+    subtitle = `${now < firstStart ? `Starts in ${formatDuration(firstStart - now, cfg)}` : `From day ${shortDay(unstarted[0], 3)}`} · protection full`;
   else if (onTime)
     subtitle = (
       <>
@@ -172,7 +174,7 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
           </div>
         ),
       })}
-      {moment && <ApprovedMoment cycle={cycle} {...moment} onDismiss={onFinish} />}
+      {moment && <ApprovedMoment cycle={cycle} held={record.reservesHeld} {...moment} onDismiss={onFinish} />}
     </>
   );
 }
@@ -207,14 +209,9 @@ function LookBackCard({ lb }: { lb: LookBack }) {
   );
 }
 
-/** The reserve-earned moment (02-workflows §6): calm, ≤ 2 s, tap to dismiss. */
-function ApprovedMoment({ cycle, onTime, days, onDismiss }: { cycle: number; onTime: boolean; days: number[]; onDismiss: () => void }) {
-  return (
-    <Moment
-      icon={onTime ? Diamond : CalendarCheck}
-      title={onTime ? '+1 protection' : 'Cycle approved'}
-      body={onTime ? `Cycle ${cycle} approved on time.` : `Days ${shortDay(days[0], 3)}–${shortDay(days[days.length - 1], 3)} are planned.`}
-      onDismiss={onDismiss}
-    />
-  );
+/** The approval moment (02-workflows §6): "+1 protection" when earned; at the cap, "protection full". */
+function ApprovedMoment({ cycle, onTime, held, days, onDismiss }: { cycle: number; onTime: boolean; held: number; days: number[]; onDismiss: () => void }) {
+  // Frozen at approval: the record may change underneath while the moment shows.
+  const [text] = useState(() => approvedMomentText(cycle, onTime, held, days));
+  return <Moment icon={text.earned ? Diamond : CalendarCheck} title={text.title} body={text.body} onDismiss={onDismiss} />;
 }

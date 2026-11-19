@@ -9,6 +9,7 @@
 
 import type { DayConfig } from '../time/daykeep';
 import { formatSeconds } from '../time/seconds';
+import { personalRecords } from '../domain/engine';
 import type { WorkoutItem, WorkoutRoutine, WorkoutSession } from '../domain/types';
 import { buildPhases, end, estimateRopeTurns, startRun, summarize, tick, type RunSummary } from './phases';
 
@@ -120,6 +121,23 @@ export function shortNote(r: WorkoutResult): string | null {
 export function fieldHint(last: number | null, target: number | undefined, unit = ''): string {
   const l = last === null ? 'no data yet' : `last ${last}${unit}`;
   return target === undefined ? l : `${l} · target ${target}${unit}`;
+}
+
+export type RecordField = LogField | 'rounds';
+
+/**
+ * Personal records this log beats (P13: an inline badge on the log, no
+ * full-screen moment): dead hang and rope turns as typed, rounds from the
+ * timer. Only an existing record (> 0) can be beaten.
+ */
+export function recordsBeaten(result: WorkoutResult, draft: LogDraft, sessions: WorkoutSession[]): RecordField[] {
+  const pr = personalRecords(sessions);
+  const out: RecordField[] = [];
+  const beats = (value: number | null, best: number) => value !== null && best > 0 && value > best;
+  if (beats(result.roundsCompleted, pr.maxRounds)) out.push('rounds');
+  if (beats(parseCount(draft.fields.ropeTurns), pr.maxRopeTurns)) out.push('ropeTurns');
+  if (beats(parseCount(draft.fields.hangSeconds), pr.maxHangSeconds)) out.push('hangSeconds');
+  return out;
 }
 
 /**

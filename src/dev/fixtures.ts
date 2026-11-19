@@ -42,6 +42,8 @@ export interface FixtureOptions {
   /** Also plan and approve (on time) the cycle after today's. */
   approveNext?: boolean;
   anchor?: string;
+  /** Leave the last closed cycle's clean-cycle moment unshown (default: already shown, as after a normal open). */
+  cleanCycleDue?: boolean;
 }
 
 export interface Fixture {
@@ -74,6 +76,7 @@ export function buildFixture(opts: FixtureOptions): Fixture {
   const data = emptyData();
   data.settings.config = { ...cfg };
   data.settings.anchor = opts.anchor ?? 'After coffee';
+  if (!opts.cleanCycleDue) data.settings.cleanCycleShown = cycleOf(today) - 1;
 
   // Plans and approvals.
   const lastCycle = cycleOf(Math.max(today, recordStart)) + (opts.approveNext ? 1 : 0);
@@ -302,6 +305,10 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     fixture: { history: since14340(run(12) + 'mmm', 'T'), today: TODAY },
     screen: 'justify',
   },
+  'clean-cycle': {
+    description: 'First open after cycle 1434 closed 10 of 10 done: the clean-cycle moment (once)',
+    fixture: { history: '.' + run(10) + 'T', today: 14350, cleanCycleDue: true },
+  },
   'cycle-tomorrow': {
     description: "Today done, next cycle (1436) starts tomorrow unapproved: approving it is Today's primary",
     fixture: { history: '.' + run(19) + 'D', today: 14359 },
@@ -329,6 +336,11 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
   'cycle-approve': {
     description: 'Approve the next cycle (1436), pre-filled, 2 days before it starts; one justified miss to look back on',
     fixture: { history: '.' + run(14) + 'M' + run(3) + 'D', today: 14358 },
+    screen: 'cycle',
+  },
+  'cycle-approve-full': {
+    description: 'Approve the next cycle (1436) on time while 2 protections are held: "protection full", never "+1"',
+    fixture: { history: '.' + run(18) + 'D', today: 14358 },
     screen: 'cycle',
   },
   'cycle-late': {

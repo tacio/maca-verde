@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../time/daykeep';
 import { WORKOUT_ROUTINES } from '../data/routines';
-import { OverloadEngine } from '../services/overloadEngine';
-import type { UserFitnessProfile } from '../types/fitness';
 import { dayStartUnix, validatePlanItems } from './plan';
 import {
   POSTURE_ROUTINE_ID,
@@ -17,7 +15,7 @@ import {
   suggestDay,
   suggestTargets,
 } from './engine';
-import type { WorkoutSession } from './types';
+import type { WorkoutRoutine, WorkoutSession } from './types';
 
 const CFG = DEFAULT_CONFIG;
 let seq = 0;
@@ -79,12 +77,33 @@ describe('personal records', () => {
   });
 });
 
+/** The legacy OverloadEngine.scaleRoutineForUser, verbatim (the service is gone; the formula stays). */
+function legacyScale(base: WorkoutRoutine, multiplier: number, lvl: number): WorkoutRoutine {
+  const levelBonusSeconds = Math.min(10, Math.floor((lvl - 1) * 1.5));
+  const scaledExercises = base.exercises.map((item) => ({
+    ...item,
+    workSeconds: Math.min(50, Math.round(item.workSeconds * multiplier + (levelBonusSeconds > 0 ? 2 : 0))),
+    restSeconds: Math.max(10, item.restSeconds),
+  }));
+  const totalDurationEstimate = Math.ceil(
+    (scaledExercises.reduce((acc, curr) => acc + curr.workSeconds + curr.restSeconds, 0) * base.rounds +
+      base.roundRestSeconds * (base.rounds - 1) +
+      base.prepSeconds) /
+      60,
+  );
+  return {
+    ...base,
+    exercises: scaledExercises,
+    estimatedDurationMinutes: totalDurationEstimate,
+    estimatedCalories: Math.round(base.estimatedCalories * multiplier),
+  };
+}
+
 describe('scaleRoutine', () => {
   it('equals legacy scaleRoutineForUser', () => {
     for (const routine of WORKOUT_ROUTINES) {
       for (const [m, lvl] of [[1, 1], [1.07, 2], [1.25, 5], [1.4, 10]]) {
-        const profile = { overloadMultiplier: m, level: lvl } as UserFitnessProfile;
-        expect(scaleRoutine(routine, m, lvl)).toEqual(OverloadEngine.scaleRoutineForUser(routine, profile));
+        expect(scaleRoutine(routine, m, lvl)).toEqual(legacyScale(routine, m, lvl));
       }
     }
   });

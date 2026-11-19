@@ -1,9 +1,11 @@
 /**
  * DOM rules for new UI (docs/design/01-principles.md checks; contract in CLAUDE.md).
  *
- * Rules run only on markup that opts in, so the legacy app never trips them:
+ * Rules run only on markup that opts in:
  *   [data-screen="name"]  root of a new screen; per-screen rules are scoped to it
  *   [data-primary]        the one primary action of a screen (P9)
+ *   [data-autoadvance]    on a timed screen's root: a step that runs out on its own
+ *                         (drill Elevate/Freeze/Sigh) — no primary at all, not even a disabled one
  *   [data-nav]            bottom navigation, ≤ 4 destinations (P9)
  *   [data-hud-control]    the HUD control (Pause): ≥ 72 px tall, at most 1 per screen (P12)
  *   [data-hud-digits]     HUD countdown, digit cap height ≥ 160 px (P12)
@@ -68,9 +70,13 @@ export async function checkDom(page: Page): Promise<Violation[]> {
     for (const screen of screens) {
       const name = `screen "${screen.dataset.screen}"`;
 
-      // P9 — exactly one visible primary action.
+      // P9 — exactly one visible primary action; none while a timed step runs out on its own.
       const primaries = [...screen.querySelectorAll('[data-primary]')].filter(visible);
-      if (primaries.length !== 1) add('primary', `${name}: ${primaries.length} visible [data-primary], expected 1`);
+      const auto = screen.hasAttribute('data-autoadvance');
+      if (auto && !(L.timedScreens as readonly string[]).includes(screen.dataset.screen ?? ''))
+        add('primary', `${name}: [data-autoadvance] is only for timed screens (${L.timedScreens.join(', ')})`);
+      const expected = auto ? 0 : 1;
+      if (primaries.length !== expected) add('primary', `${name}: ${primaries.length} visible [data-primary], expected ${expected}`);
 
       // P12 — touch targets.
       const interactive = [

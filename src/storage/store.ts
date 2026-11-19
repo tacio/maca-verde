@@ -255,6 +255,8 @@ function parseSettings(v: unknown, strict: boolean): Settings {
   if (last !== undefined) s.drive.lastBackupUnix = last;
   const onboarded = pick<number | undefined>(v.onboardedUnix, isNum, undefined, 'onboardedUnix');
   if (onboarded !== undefined) s.onboardedUnix = onboarded;
+  const clean = pick<number | undefined>(v.cleanCycleShown, isNum, undefined, 'cleanCycleShown');
+  if (clean !== undefined) s.cleanCycleShown = clean;
   return s;
 }
 

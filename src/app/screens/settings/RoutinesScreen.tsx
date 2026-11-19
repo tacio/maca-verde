@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { EXERCISE_LIST } from '../../../data/exercises';
 import { WORKOUT_ROUTINES } from '../../../data/routines';
+import { exerciseName } from '../../../workout/exerciseCues';
 import { findRoutine } from '../../../domain/engine';
 import { nowUnix } from '../../../time/clock';
 import { formatSeconds } from '../../../time/seconds';
@@ -123,7 +124,8 @@ export function RoutineViewScreen({ id }: { id: string }) {
   );
 }
 
-const EXERCISE_OPTIONS = [...EXERCISE_LIST].sort((a, b) => a.name.localeCompare(b.name));
+// Short names, as in the HUD and the workout preview.
+const EXERCISE_OPTIONS = EXERCISE_LIST.map((e) => ({ id: e.id, name: exerciseName(e.id) })).sort((a, b) => a.name.localeCompare(b.name));
 
 /** Create or edit a custom routine: name, protocol, rounds, rest between rounds, exercises with work/rest seconds. */
 export function RoutineEditScreen({ id }: { id: string }) {

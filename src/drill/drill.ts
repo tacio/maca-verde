@@ -8,7 +8,7 @@
 
 import { EMOTIONAL_SCENARIOS } from '../data/emotionalScenarios';
 import type { DrillLog } from '../domain/types';
-import type { ProvocationScenario } from '../types/mood';
+import type { ProvocationScenario } from '../domain/types';
 
 export const DRILL_STEPS = ['elevate', 'freeze', 'sigh', 'scenario'] as const;
 export type DrillStep = (typeof DRILL_STEPS)[number];

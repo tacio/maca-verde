@@ -3,10 +3,10 @@
  * domain data. No React here (unit-tested in view.test.ts).
  */
 
-import { cycleOf, type DayConfig } from '../time/daykeep';
+import { cycleOf, shortDay, type DayConfig } from '../time/daykeep';
 import { formatSeconds } from '../time/seconds';
 import { findRoutine, POSTURE_ROUTINE_ID, ROPE_ROUTINE_ID, TABATA_ROUTINE_ID } from '../domain/engine';
-import type { ItemProgress, RecordSummary } from '../domain/record';
+import { RESERVE_CAP, type ItemProgress, type RecordSummary } from '../domain/record';
 import type { PlanItem, WorkoutRoutine, WorkoutTargets } from '../domain/types';
 import type { GlyphStatus } from '../ui/StatusGlyph';
 
@@ -154,4 +154,69 @@ export function dayGlyph(day: number, record: RecordSummary): GlyphStatus {
     default:
       return 'todo';
   }
+}
+
+/* --- celebrations (P13, 02-workflows §6) ----------------------------------- */
+
+/**
+ * The closed cycle whose clean-cycle moment is due, or null: the cycle just
+ * before today's, if it was clean and its moment hasn't been shown yet
+ * (`shown` = settings.cleanCycleShown, the last cycle already celebrated).
+ * Older cycles never celebrate late.
+ */
+export function cleanCycleDue(record: RecordSummary, shown: number | undefined): number | null {
+  const cycle = cycleOf(record.today) - 1;
+  if (shown !== undefined && cycle <= shown) return null;
+  return isCleanCycle(cycle, record) ? cycle : null;
+}
+
+/** Roughly 1 day in 10 gets the rare day-done variant; fixed per day number, so it's stable. */
+export function isRareDay(day: number): boolean {
+  return (Math.imul(day, 2654435761) >>> 0) % 10 === 3;
+}
+
+export type DayDoneKind = 'recovery' | 'rare' | 'plain';
+
+/** Which day-done moment a day gets: recovery wins; else the rare variant on its days. */
+export function dayDoneKind(day: number, isRecoveryDay: boolean): DayDoneKind {
+  if (isRecoveryDay) return 'recovery';
+  return isRareDay(day) ? 'rare' : 'plain';
+}
+
+export const DAY_DONE_TITLE: Record<DayDoneKind, string> = {
+  recovery: 'Back on track',
+  rare: 'Beautifully done',
+  plain: 'Day done',
+};
+
+/* --- streak protection copy (brief → Reserves, "might as well spend it") ---- */
+
+/**
+ * At the cap an on-time approval earns nothing more: the copy says
+ * "protection full" and never "+1", and nothing says protection was lost.
+ * `held` is the protection held now (record.reservesHeld).
+ */
+export const protectionFull = (held: number) => held >= RESERVE_CAP;
+
+/** Today's quiet "plan the next cycle" row. Today never mentions protection (brief). */
+export function cycleRowMeta(_held: number): string {
+  return 'Approve it before it starts';
+}
+
+/** Plan tab, an unapproved cycle that hasn't started. */
+export function planApproveHint(firstDay: number, held: number): string {
+  const before = `Approve it before day ${shortDay(firstDay, 3)} starts`;
+  return protectionFull(held) ? `${before}. Streak protection is full.` : `${before} to earn streak protection.`;
+}
+
+/** The moment after approving a cycle. */
+export function approvedMomentText(
+  cycle: number,
+  onTime: boolean,
+  held: number,
+  days: number[],
+): { earned: boolean; title: string; body: string } {
+  if (onTime && !protectionFull(held)) return { earned: true, title: '+1 protection', body: `Cycle ${cycle} approved on time.` };
+  if (onTime) return { earned: false, title: 'Cycle approved', body: `On time · protection full` };
+  return { earned: false, title: 'Cycle approved', body: `Days ${shortDay(days[0], 3)}–${shortDay(days[days.length - 1], 3)} are planned.` };
 }

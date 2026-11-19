@@ -96,6 +96,16 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
     expect(r.days[r.days.length - 1].day).toBe(14359); // cycle 1436 not planned yet
     expect(r.protectedDays).toEqual([14354]);
   },
+  'cycle-approve-full': (r) => {
+    expect(r.today).toBe(14358);
+    expect(r.reservesHeld).toBe(2);
+    expect(r.days[r.days.length - 1].day).toBe(14359); // cycle 1436 not planned yet
+  },
+  'clean-cycle': (r) => {
+    expect(r.today).toBe(14350);
+    expect(r.protectedDays).toEqual([]);
+    expect(r.days.slice(0, 10).every((e) => e.status === 'done')).toBe(true);
+  },
   'cycle-late': (r) => {
     expect(r.today).toBe(14360);
     expect(r.todayEval.planned).toBe(false); // cycle 1436 started without approval

@@ -1,7 +1,7 @@
 /**
  * Every registered scenario × light/dark at 412×915 (Pixel 8): DOM rules
  * (helpers/rules.ts) + axe on [data-screen]. Scenarios without a
- * [data-screen] (legacy UI) are reported as skipped.
+ * [data-screen] (e.g. the UI gallery) are reported as skipped.
  */
 import { test, expect } from '@playwright/test';
 import { SCENARIOS } from '../../src/dev/scenarios';
@@ -24,7 +24,7 @@ for (const theme of THEMES) {
         const dom = (await checkDom(page)).map((v) => `${v.rule}: ${v.message}`);
         const axe = await runAxe(page);
         expect([...dom, ...(axe ?? [])], 'UX rule violations').toEqual([]);
-        test.skip(axe === null, 'no [data-screen] on this scenario (legacy UI); axe skipped');
+        test.skip(axe === null, 'no [data-screen] on this scenario; axe skipped');
       });
     }
   });

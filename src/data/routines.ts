@@ -1,4 +1,4 @@
-import { WorkoutRoutine } from '../types/fitness';
+import type { WorkoutRoutine } from '../domain/types';
 
 export const WORKOUT_ROUTINES: WorkoutRoutine[] = [
   {

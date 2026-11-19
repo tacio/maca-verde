@@ -116,20 +116,17 @@ export function DrillScreen({ from, afterWorkout }: { from: DrillStep; afterWork
     close();
   };
 
+  // Timed steps can't be cut short (P12) and advance on their own, so they show no footer:
+  // the countdown or the breath counter is the only progress. Only the scenario has an action.
   const footer =
     step === 'scenario' ? (
       <Button variant="primary" full icon={Check} disabled={choice === null} onClick={finish}>
         Finish
       </Button>
-    ) : (
-      // Timed steps can't be cut short (P12): they advance on their own when the timer ends.
-      <Button variant="primary" full disabled>
-        {step === 'sigh' ? 'Next when the breaths end' : `Next in ${secs} s`}
-      </Button>
-    );
+    ) : undefined;
 
   return (
-    <FullScreen screen="drill" title="Pause drill" onClose={close} footer={footer}>
+    <FullScreen screen="drill" title="Pause drill" onClose={close} footer={footer} autoAdvance={timed}>
       <div data-step={step} className="flex flex-col gap-1 pt-2">
         <p className="text-sm font-medium tabular-nums text-ink-muted">
           Step {index + 1} of {allSteps.length}

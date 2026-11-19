@@ -10,7 +10,7 @@ import { cx } from '../../ui/cx';
 import { useApp } from '../AppContext';
 import { targetCycle } from '../cycle';
 import { useNav } from '../nav';
-import { dayGlyph, daySummary } from '../view';
+import { dayGlyph, daySummary, planApproveHint } from '../view';
 import { cycleRange } from './CycleEditor';
 import { TabScreen } from './TabScreen';
 
@@ -79,7 +79,7 @@ export function PlanScreen() {
         ) : (
           <p className="rounded-card border border-dashed border-line p-4 text-base text-ink-muted">
             {now < first
-              ? `Approve it before day ${shortDay(cycle * 10, 3)} starts to earn streak protection.`
+              ? planApproveHint(cycle * 10, record.reservesHeld)
               : openDays.length
                 ? `Days ${shortDay(openDays[0], 3)}–${shortDay(cycle * 10 + 9, 3)} can still be planned, without earning protection.`
                 : 'No plan for this cycle.'}

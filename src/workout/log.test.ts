@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { WORKOUT_ROUTINES } from '../data/routines';
 import { ROPE_ROUTINE_ID, POSTURE_ROUTINE_ID, TABATA_ROUTINE_ID } from '../domain/engine';
-import type { WorkoutItem } from '../domain/types';
+import type { WorkoutItem, WorkoutSession } from '../domain/types';
 import { sessionSatisfies } from '../domain/record';
 import { DEFAULT_CONFIG } from '../time/daykeep';
 import {
@@ -13,6 +13,7 @@ import {
   logFields,
   logHeader,
   parseCount,
+  recordsBeaten,
   shortNote,
   simulatedResult,
   type WorkoutResult,
@@ -123,5 +124,24 @@ describe('simulatedResult (dev scenarios)', () => {
     const early = simulatedResult(rope, routine(ROPE_ROUTINE_ID), 'early', 10_000);
     expect(early.completedFull).toBe(false);
     expect(early.activeSeconds).toBeLessThan(full.activeSeconds);
+  });
+});
+
+describe('records beaten (inline badge)', () => {
+  const past = (over: Partial<WorkoutSession>): WorkoutSession => ({
+    id: 'p', routineId: ROPE_ROUTINE_ID, startUnix: 0, endUnix: 600, completedFull: true, totalSeconds: 600,
+    roundsCompleted: 2, totalRounds: 2, rpe: 7, neck: 2, estimatedCalories: 100, ...over,
+  });
+  const draft = (fields: Record<string, string>) => ({ rpe: 7, neck: 2, fields });
+
+  it('flags only values above an existing record', () => {
+    const history = [past({ ropeTurns: 300, hangSeconds: 40 })];
+    expect(recordsBeaten(result({ roundsCompleted: 3 }), draft({ ropeTurns: '301', hangSeconds: '40' }), history)).toEqual(['rounds', 'ropeTurns']);
+    expect(recordsBeaten(result({ roundsCompleted: 2 }), draft({ ropeTurns: '300', hangSeconds: '41' }), history)).toEqual(['hangSeconds']);
+  });
+
+  it('needs a record to beat, and a valid number', () => {
+    expect(recordsBeaten(result({ roundsCompleted: 5 }), draft({ ropeTurns: '500' }), [])).toEqual([]);
+    expect(recordsBeaten(result(), draft({ ropeTurns: '9x' }), [past({ ropeTurns: 10 })])).toEqual([]);
   });
 });

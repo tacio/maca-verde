@@ -113,9 +113,17 @@ test('rule justify-copy: each half is checked on its own', async ({ page }) => {
   expect((await violations(page, blame, 'justify-copy')).map((v) => v.message)).toEqual(['screen "justify": blames the person ("You didn\'t")']);
 });
 
-test('rules ignore markup outside [data-screen] (legacy UI)', async ({ page }) => {
+test('rule primary: a self-advancing timed step shows no primary', async ({ page }) => {
+  const step = (inner: string) => `<main data-screen="drill" data-autoadvance><h1>Freeze</h1><p role="timer">20</p>${inner}</main>`;
+  expect(await violations(page, step(''), 'primary')).toEqual([]);
+  expect((await violations(page, step('<button data-primary disabled>Next in 20 s</button>'), 'primary')).length).toBeGreaterThan(0);
+  const notTimed = '<main data-screen="today" data-autoadvance><h1>Today</h1></main>';
+  expect((await violations(page, notTimed, 'primary')).length).toBeGreaterThan(0);
+});
+
+test('rules ignore markup outside [data-screen]', async ({ page }) => {
   await page.setContent(`<div><button style="height:20px">x</button><button data-primary>a</button><button data-primary>b</button>
-    <p>${'Long legacy paragraph. '.repeat(40)}</p></div>`);
+    <p>${'Long unscoped paragraph. '.repeat(40)}</p></div>`);
   expect(await checkDom(page)).toEqual([]);
 });
 

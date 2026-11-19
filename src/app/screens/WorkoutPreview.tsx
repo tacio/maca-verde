@@ -2,6 +2,7 @@ import { ChevronDown, Play } from 'lucide-react';
 import { EXERCISES } from '../../data/exercises';
 import type { WorkoutItem, WorkoutRoutine } from '../../domain/types';
 import { formatSeconds } from '../../time/seconds';
+import { exerciseName } from '../../workout/exerciseCues';
 import { Button } from '../../ui/Button';
 import { Sheet } from '../../ui/Sheet';
 import { cx, focusRing } from '../../ui/cx';
@@ -65,6 +66,8 @@ export function ExerciseList({ exercises }: { exercises: WorkoutRoutine['exercis
     <ol className="-mx-3 flex flex-col">
       {exercises.map((ex, i) => {
         const info = EXERCISES[ex.exerciseId];
+        // The HUD's short name; the library's long title goes inside "How?".
+        const name = exerciseName(ex.exerciseId);
         return (
           <li key={`${ex.exerciseId}-${i}`}>
             <details data-disclosure className="group">
@@ -77,7 +80,7 @@ export function ExerciseList({ exercises }: { exercises: WorkoutRoutine['exercis
               >
                 <span className="w-5 shrink-0 text-sm tabular-nums text-ink-muted">{i + 1}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-base text-ink">{info?.name ?? ex.exerciseId}</span>
+                  <span className="truncate text-base text-ink">{name}</span>
                   <span className="truncate text-sm tabular-nums text-ink-muted">
                     {ex.workSeconds} s · rest {ex.restSeconds} s
                   </span>
@@ -89,6 +92,7 @@ export function ExerciseList({ exercises }: { exercises: WorkoutRoutine['exercis
               </summary>
               {info && (
                 <div className="px-3 pb-3 pl-11 text-sm leading-relaxed text-ink-muted">
+                  {info.name !== name && <p className="pb-1 font-medium text-ink">{info.name}</p>}
                   <ul className="list-disc pl-4">
                     {info.formPoints.map((f) => (
                       <li key={f}>{f}</li>

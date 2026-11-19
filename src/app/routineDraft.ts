@@ -9,7 +9,7 @@ import { WORKOUT_ROUTINES } from '../data/routines';
 import { shortDay } from '../time/daykeep';
 import { routineSeconds } from '../workout/phases';
 import type { AppData, WorkoutRoutine } from '../domain/types';
-import type { WorkoutProtocol } from '../types/fitness';
+import type { WorkoutProtocol } from '../domain/types';
 
 export const PROTOCOLS: readonly { value: WorkoutProtocol; label: string }[] = [
   { value: 'circuit', label: 'Circuit' },

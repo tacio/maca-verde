@@ -11,6 +11,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   reporter: [['line']],
   outputDir: 'test-results',
+  // Visual baselines (tests/ux/visual.spec.ts), committed; one set, no per-platform suffix.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
   use: {
     ...devices['Desktop Chrome'],
     baseURL: `http://localhost:${PORT}`,

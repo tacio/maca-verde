@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Trophy } from 'lucide-react';
 import type { WorkoutItem } from '../../domain/types';
 import { requestAutoBackup } from '../../storage/autoBackup';
 import { nowUnix } from '../../time/clock';
@@ -19,6 +19,7 @@ import {
   logFields,
   logHeader,
   parseCount,
+  recordsBeaten,
   shortNote,
   simulatedResult,
   type LogDraft,
@@ -67,6 +68,7 @@ function WorkoutLog({ item, result }: { item: WorkoutItem; result: WorkoutResult
   const note = shortNote(result);
   const drillDue = record.todayEval.items.some((p) => p.item.kind === 'drill' && !p.satisfied);
   const valid = draftValid(draft);
+  const beaten = recordsBeaten(result, draft, data.sessions);
 
   useBackGuard(() => setConfirm(true));
 
@@ -110,6 +112,12 @@ function WorkoutLog({ item, result }: { item: WorkoutItem; result: WorkoutResult
     >
       <div className="flex flex-col gap-6 pt-2">
         {note && <p className="rounded-card bg-surface-2 px-4 py-3 text-sm text-ink">{note}</p>}
+        {beaten.includes('rounds') && (
+          <p className="flex items-center gap-2 text-base text-ink">
+            <RecordBadge />
+            {result.roundsCompleted} rounds — your most yet
+          </p>
+        )}
         <Scale
           label="Effort (RPE)"
           min={1}
@@ -136,6 +144,7 @@ function WorkoutLog({ item, result }: { item: WorkoutItem; result: WorkoutResult
             field={f}
             item={item}
             text={draft.fields[f] ?? ''}
+            record={beaten.includes(f)}
             onText={(text) => setDraft((d) => ({ ...d, fields: { ...d.fields, [f]: text } }))}
           />
         ))}
@@ -162,7 +171,29 @@ function WorkoutLog({ item, result }: { item: WorkoutItem; result: WorkoutResult
   );
 }
 
-function FieldRow({ field, item, text, onText }: { field: LogField; item: WorkoutItem; text: string; onText: (t: string) => void }) {
+/** Inline "Record" badge (P13: competence feedback, no full-screen moment). */
+function RecordBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-sm font-semibold text-accent">
+      <Trophy aria-hidden size={14} strokeWidth={2.25} />
+      Record
+    </span>
+  );
+}
+
+function FieldRow({
+  field,
+  item,
+  text,
+  record,
+  onText,
+}: {
+  field: LogField;
+  item: WorkoutItem;
+  text: string;
+  record: boolean;
+  onText: (t: string) => void;
+}) {
   const { data } = useApp();
   const id = useId();
   const last = lastValue(field, item.routineId, data.sessions);
@@ -187,9 +218,12 @@ function FieldRow({ field, item, text, onText }: { field: LogField; item: Workou
           className={cx(inputClass, 'w-28 text-right')}
         />
       </div>
-      <p id={`${id}-hint`} data-last-hint className="truncate text-sm tabular-nums text-ink-muted">
-        {fieldHint(last, item.targets[field], unit)}
-      </p>
+      <div className="flex items-center gap-2">
+        <p id={`${id}-hint`} data-last-hint className="min-w-0 flex-1 truncate text-sm tabular-nums text-ink-muted">
+          {fieldHint(last, item.targets[field], unit)}
+        </p>
+        {record && <RecordBadge />}
+      </div>
     </div>
   );
 }

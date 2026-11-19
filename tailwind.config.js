@@ -22,33 +22,21 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
+    // Only tokens: Tailwind's default palette (slate, white…) is replaced, not extended.
+    colors: {
+      transparent: 'transparent',
+      current: 'currentColor',
+      ...tokens,
+    },
     extend: {
-      // TRANSITION: `extend` keeps Tailwind's palette (slate, brand…) alive for
-      // legacy screens listed in scripts/lint-tokens.mjs. Once the last legacy
-      // file is gone, move `colors` out of `extend` so only tokens exist.
-      colors: {
-        ...tokens,
-        brand: {
-          50: '#f2fce2',
-          100: '#e1f8c0',
-          200: '#c5f28a',
-          300: '#a3e64d',
-          400: '#84d521',
-          500: '#68ba0c',
-          600: '#509506',
-          700: '#3e730a',
-          800: '#345b0e',
-          900: '#2d4d10',
-          950: '#142b03',
-        },
-      },
+      // Preflight's default border color (was gray-200).
+      borderColor: { DEFAULT: 'var(--line)' },
       fontFamily: {
         sans: 'var(--font-sans)',
       },
       fontSize: {
         hud: ['var(--hud-digits)', { lineHeight: '1' }],
       },
-      // Named (not sm/DEFAULT/lg) so legacy `rounded-lg`, `transition` keep their meaning.
       borderRadius: {
         control: 'var(--radius-sm)',
         card: 'var(--radius)',
@@ -60,10 +48,6 @@ export default {
       },
       transitionTimingFunction: {
         calm: 'var(--ease)',
-      },
-      animation: {
-        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'bounce-subtle': 'bounce 2s infinite',
       },
     },
   },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, CalendarPlus, Check, ChevronRight, PenLine, Play, Smile, Sprout, Sunrise, TriangleAlert } from 'lucide-react';
+import { BadgeCheck, BarChart3, CalendarPlus, Check, ChevronRight, PenLine, Play, Smile, Sparkles, Sprout, Sunrise, TriangleAlert } from 'lucide-react';
 import { formatDuration, shortDay } from '../../time/daykeep';
 import { Button } from '../../ui/Button';
 import { DayHeader } from '../../ui/DayHeader';
@@ -13,7 +13,8 @@ import { useApp } from '../AppContext';
 import { Moment } from '../Moment';
 import { useNav } from '../nav';
 import { CYCLE_NOTICE_DAYS, haltLine, itemFlow, nextCycleDue, primaryText, recoveryLine, todayPrimary } from '../today';
-import { progressText } from '../view';
+import { DAY_DONE_TITLE, cleanCycleDue, cycleRowMeta, dayDoneKind, progressText } from '../view';
+import { cycleRange } from './CycleEditor';
 import { TabScreen } from './TabScreen';
 import { WorkoutPreview } from './WorkoutPreview';
 
@@ -30,7 +31,7 @@ let seen: { day: number; done: Set<string>; all: boolean } | null = null;
  * preview sheet for that item (the `preview:<itemId>` flow).
  */
 export function TodayScreen({ preview }: { preview?: string }) {
-  const { data, record, now, cfg } = useApp();
+  const { data, record, now, cfg, update } = useApp();
   const { open, close, setTab } = useNav();
   const today = record.today;
   const t = record.todayEval;
@@ -41,6 +42,14 @@ export function TodayScreen({ preview }: { preview?: string }) {
   // Frozen at mount: what changed since Today was last on screen.
   const [fresh] = useState(() => (seen?.day === today ? t.items.filter((p) => p.satisfied && !seen!.done.has(p.item.id)).map((p) => p.item.id) : []));
   const [moment, setMoment] = useState(() => seen?.day === today && !seen.all && allDone);
+  // A clean cycle (10/10, none protected) gets its moment on the first open after it closes, once.
+  // Not over the warm-up, empty or justification screens; it waits until Today itself shows.
+  const blocked = primary.kind === 'warmup' || primary.kind === 'unplanned' || primary.kind === 'justify';
+  const [clean, setClean] = useState(() => (blocked ? null : cleanCycleDue(record, data.settings.cleanCycleShown)));
+  useEffect(() => {
+    if (clean === null) return;
+    update((d) => (d.settings.cleanCycleShown === clean ? d : { ...d, settings: { ...d.settings, cleanCycleShown: clean } }));
+  }, [clean, update]);
   useEffect(() => {
     seen = { day: today, done: new Set(t.items.filter((p) => p.satisfied).map((p) => p.item.id)), all: allDone };
   }, [today, t, allDone]);
@@ -223,7 +232,7 @@ export function TodayScreen({ preview }: { preview?: string }) {
             <ListRow
               leading={<CalendarPlus aria-hidden size={20} strokeWidth={1.75} className="text-ink-muted" />}
               title={`Cycle ${due.cycle} starts in ${formatDuration(Math.max(0, due.in), cfg)}`}
-              meta="Approve it to earn streak protection"
+              meta={cycleRowMeta(record.reservesHeld)}
               trailing={<ChevronRight aria-hidden size={18} />}
               onClick={() => open(`cycle:${due.cycle}`)}
             />
@@ -237,14 +246,18 @@ export function TodayScreen({ preview }: { preview?: string }) {
       )}
 
       {previewItem && previewItem.item.kind === 'workout' && <WorkoutPreview item={previewItem.item} onClose={close} />}
-      {moment && (
-        <Moment
-          icon={record.isRecoveryDay ? Sunrise : Check}
-          title={record.isRecoveryDay ? 'Back on track' : 'Day done'}
-          body={`Day ${shortDay(today, 3)} · ${total} of ${total}`}
-          onDismiss={() => setMoment(false)}
-        />
+      {moment && <DayDoneMoment day={today} recovery={record.isRecoveryDay} total={total} onDismiss={() => setMoment(false)} />}
+      {!moment && clean !== null && (
+        <Moment icon={BadgeCheck} title="Clean cycle" body={`Days ${cycleRange(clean)} · 10 of 10 done`} onDismiss={() => setClean(null)} />
       )}
     </TabScreen>
   );
+}
+
+const DAY_DONE_ICON = { recovery: Sunrise, rare: Sparkles, plain: Check } as const;
+
+/** The day-done moment (P13): "Back on track" on a recovery day, a rare variant about 1 day in 10. */
+function DayDoneMoment({ day, recovery, total, onDismiss }: { day: number; recovery: boolean; total: number; onDismiss: () => void }) {
+  const kind = dayDoneKind(day, recovery);
+  return <Moment icon={DAY_DONE_ICON[kind]} title={DAY_DONE_TITLE[kind]} body={`Day ${shortDay(day, 3)} · ${total} of ${total}`} onDismiss={onDismiss} />;
 }

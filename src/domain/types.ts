@@ -6,17 +6,80 @@
  */
 
 import type { DayConfig } from '../time/daykeep';
-import type { WorkoutRoutine } from '../types/fitness';
-import type {
-  EmotionalControlDrillLog,
-  HALTState,
-  SomaticTensionArea,
-  ValenceType,
-} from '../types/mood';
 
 export type { DayConfig } from '../time/daykeep';
-export type { WorkoutRoutine } from '../types/fitness';
-export type { HALTState, ValenceType, SomaticTensionArea } from '../types/mood';
+
+/* --- content (src/data: exercises, routines, scenarios) ------------------ */
+
+export type EquipmentType = 'rope' | 'door_bar' | 'bodyweight';
+export type GoalTarget = 'posture' | 'belly_fat' | 'cardio' | 'hybrid';
+export type WorkoutProtocol = 'tabata' | 'emom' | 'amrap' | 'pyramid' | 'circuit';
+
+export interface Exercise {
+  id: string;
+  name: string;
+  targets: GoalTarget[];
+  equipment: EquipmentType;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  description: string;
+  textNeckCue: string;
+  postureBenefit: string;
+  bellyBurnBenefit: string;
+  cardioBenefit: string;
+  formPoints: string[];
+  defaultWorkSeconds: number;
+  defaultRestSeconds: number;
+  cadenceTip?: string;
+  targetMuscles: string[];
+}
+
+export interface WorkoutExerciseItem {
+  exerciseId: string;
+  workSeconds: number;
+  restSeconds: number;
+  repsGoal?: number;
+  targetIntensity?: 'Sprint' | 'High' | 'Moderate' | 'Hold / Controlled';
+}
+
+export interface WorkoutRoutine {
+  id: string;
+  title: string;
+  subtitle: string;
+  protocol: WorkoutProtocol;
+  description: string;
+  primaryGoal: GoalTarget;
+  exercises: WorkoutExerciseItem[];
+  rounds: number;
+  roundRestSeconds: number;
+  prepSeconds: number;
+  estimatedCalories: number;
+  estimatedDurationMinutes: number;
+  isDailyRecommended?: boolean;
+  levelRequired?: number;
+}
+
+export interface ProvocationScenario {
+  id: string;
+  category: 'tired' | 'hungry' | 'upset' | 'criticism' | 'boundary';
+  situation: string;
+  somaticWarning: string;
+  impulsiveReaction: string;
+  prefrontalResponse: string;
+  mentalPauseTip: string;
+}
+
+/* --- mood ---------------------------------------------------------------- */
+
+export type ValenceType = 'great' | 'good' | 'neutral' | 'frustrated' | 'exhausted' | 'anxious';
+
+export interface HALTState {
+  hungry: boolean;
+  angry: boolean;
+  lonely: boolean;
+  tired: boolean;
+}
+
+export type SomaticTensionArea = 'jaw' | 'neck_shoulders' | 'chest' | 'stomach' | 'hands';
 
 /* --- settings ----------------------------------------------------------- */
 
@@ -35,6 +98,8 @@ export interface Settings {
   drive: DriveSettings;
   /** Set when onboarding finishes; absent means onboarding is due. */
   onboardedUnix?: number;
+  /** The last cycle whose clean-cycle moment was shown (P13); each shows once. */
+  cleanCycleShown?: number;
 }
 
 /* --- plan --------------------------------------------------------------- */
@@ -138,7 +203,16 @@ export interface MoodCheck {
 }
 
 /** A drill belongs to the day of its `unix`. */
-export type DrillLog = Omit<EmotionalControlDrillLog, 'date' | 'timestamp'> & { unix: number };
+export interface DrillLog {
+  id: string;
+  unix: number;
+  drillType: 'high_hr_pause' | 'speech_filter' | 'physiological_sigh';
+  heartRateState: 'elevated_post_hiit' | 'resting';
+  pauseSecondsAchieved: number;
+  scenarioId?: string;
+  impulseResisted: boolean;
+  reflection?: string;
+}
 
 export type JustificationReason = 'plan_too_big' | 'time' | 'energy' | 'pain' | 'forgot' | 'other';
 export const JUSTIFICATION_REASONS: readonly JustificationReason[] = [

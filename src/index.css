@@ -43,7 +43,7 @@ dialog.sheet[open]::backdrop {
   }
 }
 
-/* Reserve-earned moment (src/app/screens/CycleEditor.tsx): calm rise, ≤ 2 s total. */
+/* Celebration moment (src/app/Moment.tsx): calm rise, ≤ 2 s total. */
 .moment-in {
   animation: moment-in var(--dur) var(--ease) both;
 }
