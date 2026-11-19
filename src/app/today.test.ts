@@ -66,9 +66,9 @@ describe('todayPrimary', () => {
     expect(itemFlow({ id: 'd', kind: 'drill', count: 1 })).toBe('drill');
   });
 
-  it('labels the primary with a decimal-day length', () => {
-    expect(primaryText({ id: 'w', kind: 'workout', routineId: TABATA_ROUTINE_ID, targets: {} }, cfg)).toMatch(/^Start Tabata · \.\d{4}$/);
-    expect(primaryText({ id: 'r', kind: 'rest', restKind: 'silence', durationSeconds: 900 }, cfg)).toBe('Start silence · .0104');
+  it('labels the primary with the length in seconds (prep + work + rests, as the HUD runs it)', () => {
+    expect(primaryText({ id: 'w', kind: 'workout', routineId: TABATA_ROUTINE_ID, targets: {} }, cfg)).toBe('Start Tabata · 530 s');
+    expect(primaryText({ id: 'r', kind: 'rest', restKind: 'silence', durationSeconds: 900 }, cfg)).toBe('Start silence · 900 s');
     expect(primaryText({ id: 'm', kind: 'mood', count: 1 }, cfg)).toBe('Check in');
   });
 });

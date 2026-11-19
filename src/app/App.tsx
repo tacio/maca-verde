@@ -1,16 +1,22 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+import { coach } from '../audio/coach';
+import { isDrillStep } from '../drill/drill';
 import { AppProvider, useApp } from './AppContext';
 import { NavProvider, initialView, intArg, parseFlow, useNav, type OnboardStep } from './nav';
 import { CycleScreen } from './screens/CycleScreen';
 import { DayScreen } from './screens/DayScreen';
+import { DrillScreen } from './screens/DrillScreen';
 import { JustifyScreen } from './screens/JustifyScreen';
 import { MoodScreen } from './screens/MoodScreen';
 import { Onboarding } from './screens/Onboarding';
 import { PlaceholderScreen } from './screens/Placeholder';
 import { PlanScreen } from './screens/PlanScreen';
 import { ProgressScreen } from './screens/ProgressScreen';
+import { RestScreen } from './screens/RestScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { TodayScreen } from './screens/TodayScreen';
+import { WorkoutLogScreen } from './screens/WorkoutLogScreen';
+import { WorkoutScreen, type HudStart } from './screens/WorkoutScreen';
 
 // Dev-only primitives gallery (?scenario=ui-gallery). Behind import.meta.env.DEV
 // so production builds drop it, like the scenarios.
@@ -19,6 +25,8 @@ const Gallery = import.meta.env.DEV ? lazy(() => import('../dev/Gallery')) : nul
 function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
   const { data, record } = useApp();
   const { tab, flow } = useNav();
+  const { sound, voice } = data.settings;
+  useEffect(() => coach.configure({ sound, voice }), [sound, voice]);
 
   if (!data.settings.onboardedUnix) return <Onboarding initialStep={onboardStep} />;
   if (flow) {
@@ -38,6 +46,24 @@ function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
         return <MoodScreen key={flow} more={args[0] === 'more'} />;
       case 'justify':
         return <JustifyScreen />;
+      case 'workout': {
+        // Dev scenarios: `workout:<id>:work|rest|paused` opens the HUD at that phase.
+        const start = (['work', 'rest', 'paused'] as const).find((s) => s === args[1]);
+        return <WorkoutScreen key={flow} itemId={args[0] ?? ''} start={start as HudStart | undefined} />;
+      }
+      case 'workout-log': {
+        // Dev scenarios: `workout-log:<id>:full|early` simulates the HUD's result.
+        const sim = (['full', 'early'] as const).find((s) => s === args[1]);
+        return <WorkoutLogScreen key={flow} itemId={args[0] ?? ''} simulate={sim} />;
+      }
+      case 'drill': {
+        // `drill:after-workout` starts at Freeze; dev scenarios open a step with `drill:<step>`.
+        if (args[0] === 'after-workout') return <DrillScreen key={flow} from="freeze" afterWorkout />;
+        const from = import.meta.env.DEV && isDrillStep(args[0]) ? args[0] : 'elevate';
+        return <DrillScreen key={flow} from={from} afterWorkout={false} />;
+      }
+      case 'rest':
+        return <RestScreen key={flow} itemId={args[0] ?? ''} mid={args[1] === 'mid'} />;
       case 'preview':
         // The workout preview is a sheet over Today, as a flow so back closes it.
         return <TodayScreen preview={args[0]} />;
@@ -56,6 +82,7 @@ function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
 }
 
 export default function App() {
+  useEffect(() => coach.installUnlock(), []);
   const screen = new URLSearchParams(window.location.search).get('screen');
   if (Gallery && screen === 'gallery') {
     return (

@@ -3,7 +3,8 @@
  * domain data. No React here (unit-tested in view.test.ts).
  */
 
-import { cycleOf, formatDuration, type DayConfig } from '../time/daykeep';
+import { cycleOf, type DayConfig } from '../time/daykeep';
+import { formatSeconds } from '../time/seconds';
 import { findRoutine, POSTURE_ROUTINE_ID, ROPE_ROUTINE_ID, TABATA_ROUTINE_ID } from '../domain/engine';
 import type { ItemProgress, RecordSummary } from '../domain/record';
 import type { PlanItem, WorkoutRoutine, WorkoutTargets } from '../domain/types';
@@ -30,9 +31,9 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 export function targetsText(t: WorkoutTargets, cfg: DayConfig): string {
   const parts: string[] = [];
   if (t.rounds !== undefined) parts.push(plural(t.rounds, 'round'));
-  if (t.hangSeconds !== undefined) parts.push(`hang ${t.hangSeconds}s`);
+  if (t.hangSeconds !== undefined) parts.push(`hang ${formatSeconds(t.hangSeconds)}`);
   if (t.ropeTurns !== undefined) parts.push(plural(t.ropeTurns, 'turn'));
-  if (t.totalSeconds !== undefined) parts.push(formatDuration(t.totalSeconds, cfg));
+  if (t.totalSeconds !== undefined) parts.push(formatSeconds(t.totalSeconds));
   return parts.join(' · ');
 }
 
@@ -44,7 +45,7 @@ export function itemText(item: PlanItem, cfg: DayConfig, custom: WorkoutRoutine[
       return t ? `${routineName(item.routineId, custom)} · ${t}` : routineName(item.routineId, custom);
     }
     case 'rest':
-      return `Rest · ${item.restKind} ${formatDuration(item.durationSeconds, cfg)}`;
+      return `Rest · ${item.restKind} ${formatSeconds(item.durationSeconds)}`;
     case 'mood':
       return item.count === 1 ? 'Mood check' : `${item.count} mood checks`;
     case 'drill':

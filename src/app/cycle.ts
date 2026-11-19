@@ -94,7 +94,7 @@ export function approveWithDrafts(
 /* --- display ------------------------------------------------------------- */
 
 export interface CycleRowSummary {
-  /** Workouts and rests, "Tabata · 2 rounds + Rest · silence .0104". */
+  /** Workouts and rests, "Tabata · 2 rounds + Rest · silence 900 s". */
   title: string;
   mood: number;
   drill: number;

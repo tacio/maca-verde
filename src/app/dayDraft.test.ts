@@ -19,23 +19,17 @@ import {
 const cfg = DEFAULT_CONFIG;
 
 describe('parseDurationInput', () => {
-  it('reads decimal days', () => {
-    expect(parseDurationInput('.0104', cfg)).toBe(899);
-    expect(parseDurationInput('0.0625', cfg)).toBe(5400);
-    expect(parseDurationInput(' .5 ', cfg)).toBe(43200);
+  it('reads whole seconds, with or without "s"', () => {
+    expect(parseDurationInput('900', cfg)).toBe(900);
+    expect(parseDurationInput(' 900 s ', cfg)).toBe(900);
+    expect(parseDurationInput('45s', cfg)).toBe(45);
   });
 
-  it('reads minutes', () => {
-    expect(parseDurationInput('15m', cfg)).toBe(900);
-    expect(parseDurationInput('15 min', cfg)).toBe(900);
-    expect(parseDurationInput('1.5 minutes', cfg)).toBe(90);
+  it('rejects zero, a day or more, decimals and junk', () => {
+    for (const s of ['', '0', '86400', '.0104', '1.2', '-5', 'abc', '15m', '15h']) expect(parseDurationInput(s, cfg)).toBeNull();
   });
 
-  it('rejects zero, a day or more, and junk', () => {
-    for (const s of ['', '0', '.0000', '1', '1.2', '-.01', 'abc', '15h', '.01.2']) expect(parseDurationInput(s, cfg)).toBeNull();
-  });
-
-  it('shows minutes next to a decimal duration', () => {
+  it('shows minutes next to a duration in seconds', () => {
     expect(minutesHint(900)).toBe('≈ 15 min');
     expect(minutesHint(30)).toBe('≈ 30 s');
   });
@@ -47,7 +41,8 @@ describe('targets', () => {
     expect(parseTarget('rounds', '0', cfg)).toBeNull();
     expect(parseTarget('ropeTurns', '3.5', cfg)).toBeNull();
     expect(parseTarget('hangSeconds', '', cfg)).toBeNull();
-    expect(parseTarget('totalSeconds', '.0083', cfg)).toBe(717);
+    expect(parseTarget('totalSeconds', '720', cfg)).toBe(720);
+    expect(parseTarget('totalSeconds', '.0083', cfg)).toBeNull();
   });
 
   it('offers the metrics a routine has', () => {
@@ -95,7 +90,7 @@ describe('draft ⇄ items', () => {
     const draft = draftFromItems(items, cfg);
     expect(draft.mood).toBe(2);
     expect(draft.main[0]).toMatchObject({ kind: 'workout', targets: [{ metric: 'rounds', text: '3' }, { metric: 'ropeTurns', text: '350' }] });
-    expect(draft.main[1]).toMatchObject({ kind: 'rest', text: '.0104' });
+    expect(draft.main[1]).toMatchObject({ kind: 'rest', text: '900' });
     expect(draftToItems(draft, 14362, cfg)).toEqual({ ok: true, items });
   });
 
@@ -103,7 +98,7 @@ describe('draft ⇄ items', () => {
     const draft = draftFromItems(items, cfg);
     const rest = draft.main[1];
     if (rest.kind !== 'rest') throw new Error('rest expected');
-    rest.text = '.0105';
+    rest.text = '907 s';
     const r = draftToItems(draft, 14362, cfg);
     expect(r.ok && r.items[1]).toMatchObject({ durationSeconds: 907 });
   });
@@ -121,7 +116,7 @@ describe('draft ⇄ items', () => {
     const bad: DayDraft = {
       main: [
         { key: 'a', kind: 'workout', routineId: TABATA_ROUTINE_ID, targets: [{ metric: 'rounds', text: '' }] },
-        { key: 'b', kind: 'rest', restKind: 'silence', text: '2' },
+        { key: 'b', kind: 'rest', restKind: 'silence', text: '.0104' },
       ],
       mood: 1,
       drill: 0,

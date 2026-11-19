@@ -1,13 +1,13 @@
 import { ChevronDown, Play } from 'lucide-react';
 import { EXERCISES } from '../../data/exercises';
 import type { WorkoutItem } from '../../domain/types';
-import { formatDuration } from '../../time/daykeep';
+import { formatSeconds } from '../../time/seconds';
 import { Button } from '../../ui/Button';
 import { Sheet } from '../../ui/Sheet';
 import { cx, focusRing } from '../../ui/cx';
 import { useApp } from '../AppContext';
 import { useNav } from '../nav';
-import { itemFlow, scaledRoutine } from '../today';
+import { itemFlow, routineSeconds, scaledRoutine } from '../today';
 import { routineName, targetsText } from '../view';
 
 /**
@@ -24,7 +24,7 @@ export function WorkoutPreview({ item, onClose }: { item: WorkoutItem; onClose: 
 
   const facts: [string, string][] = [];
   if (target) facts.push(['Target', target]);
-  if (routine) facts.push(['Length', formatDuration(routine.estimatedDurationMinutes * 60, cfg)]);
+  if (routine) facts.push(['Length', formatSeconds(routineSeconds(routine))]);
   if (data.settings.anchor) facts.push(['When', data.settings.anchor]);
 
   return (

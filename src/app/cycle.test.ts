@@ -116,7 +116,7 @@ describe('cycleRowSummary', () => {
       { id: 'c', kind: 'mood', count: 2 },
       { id: 'd', kind: 'drill', count: 1 },
     ];
-    expect(cycleRowSummary(items, cfg)).toEqual({ title: 'Tabata · 2 rounds + Rest · silence .0104', mood: 2, drill: 1 });
+    expect(cycleRowSummary(items, cfg)).toEqual({ title: 'Tabata · 2 rounds + Rest · silence 900 s', mood: 2, drill: 1 });
     expect(cycleRowSummary([{ id: 'c', kind: 'mood', count: 3 }], cfg)).toEqual({ title: 'Checks only', mood: 3, drill: 0 });
     expect(cycleRowSummary([], cfg).title).toBe('Nothing planned');
   });

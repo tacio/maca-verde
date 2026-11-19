@@ -343,6 +343,55 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     fixture: { history: HUNDRED, today: TODAY },
     screen: 'progress',
   },
+  'hud-work': {
+    description: "Workout HUD on today's Rope, first work phase (accent screen, bare seconds)",
+    fixture: { history: STANDARD, today: TODAY },
+    screen: `workout:${TODAY}-0:work`,
+  },
+  'hud-rest': {
+    description: 'Workout HUD in a rest phase (rest color, "next: …")',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: `workout:${TODAY}-0:rest`,
+  },
+  'hud-paused': {
+    description: 'Workout HUD paused: sheet with Resume, End workout and How?',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: `workout:${TODAY}-0:paused`,
+  },
+  'workout-log': {
+    description: 'Post-workout log after a full Rope session: RPE, neck, rope turns (target), drill offer',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: `workout-log:${TODAY}-0:full`,
+  },
+  'workout-log-early': {
+    description: 'Post-workout log after ending early: real numbers, the item stays open',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: `workout-log:${TODAY}-0:early`,
+  },
+  'drill-elevate': {
+    description: 'Pause drill, step 1: raise the pulse (30 s)',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'drill:elevate',
+  },
+  'drill-sigh': {
+    description: 'Pause drill, step 3: physiological sigh with the breathing guide',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'drill:sigh',
+  },
+  'drill-scenario': {
+    description: 'Pause drill, step 4: a provocation scenario, choose the paused reply',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'drill:scenario',
+  },
+  'rest-timer': {
+    description: 'Rest practice (silence, .0104) a third of the way in: slow ring, Pause/End',
+    fixture: { history: STANDARD, today: TODAY },
+    tweak: (data) => {
+      const today = data.plans.find((p) => p.day === TODAY)!;
+      today.items.splice(1, 0, { id: `${TODAY}-r`, kind: 'rest', restKind: 'silence', durationSeconds: 900 });
+    },
+    screen: `rest:${TODAY}-r:mid`,
+  },
   settings: {
     description: 'Settings',
     fixture: { history: STANDARD, today: TODAY },

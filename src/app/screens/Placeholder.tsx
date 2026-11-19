@@ -6,10 +6,6 @@ import { useNav } from '../nav';
 
 /** Screens reachable from the shell that later milestones build. */
 export const PLANNED_SCREENS: Record<string, { title: string; milestone: string }> = {
-  workout: { title: 'Workout', milestone: 'M5' },
-  'workout-log': { title: 'Workout log', milestone: 'M5' },
-  drill: { title: 'Pause drill', milestone: 'M5' },
-  rest: { title: 'Rest practice', milestone: 'M5' },
   history: { title: 'History', milestone: 'M6' },
   'settings-day': { title: 'Day', milestone: 'M6' },
   'settings-anchor': { title: 'Anchor', milestone: 'M6' },

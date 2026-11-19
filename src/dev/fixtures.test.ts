@@ -107,7 +107,26 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
     expect(r.days.length).toBeGreaterThanOrEqual(106);
   },
   settings: (r) => expect(r.recordStartDay).not.toBeNull(),
+  'hud-work': workoutUndone,
+  'hud-rest': workoutUndone,
+  'hud-paused': workoutUndone,
+  'workout-log': (r) => {
+    workoutUndone(r);
+    // The log asks for rope turns (the item targets them) and offers the drill (still due).
+    expect(r.todayEval.items[0].item).toMatchObject({ kind: 'workout', targets: { ropeTurns: expect.any(Number) } });
+    expect(r.todayEval.items.some((p) => p.item.kind === 'drill' && !p.satisfied)).toBe(true);
+  },
+  'workout-log-early': workoutUndone,
+  'drill-elevate': (r) => expect(r.todayEval.status).toBe('today'),
+  'drill-sigh': (r) => expect(r.todayEval.status).toBe('today'),
+  'drill-scenario': (r) => expect(r.todayEval.status).toBe('today'),
+  'rest-timer': (r) => expect(r.todayEval.items.find((p) => p.item.id === `${r.today}-r`)).toMatchObject({ satisfied: false, item: { kind: 'rest' } }),
 };
+
+/** Today's first item is an undone workout (the HUD and log scenarios open it). */
+function workoutUndone(r: RecordSummary) {
+  expect(r.todayEval.items[0]).toMatchObject({ satisfied: false, item: { id: `${r.today}-0`, kind: 'workout' } });
+}
 
 describe('fixture scenarios', () => {
   it('every fixture scenario is registered and has an expectation', () => {

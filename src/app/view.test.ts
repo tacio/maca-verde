@@ -17,15 +17,15 @@ const drill: PlanItem = { id: 'f', kind: 'drill', count: 1 };
 describe('item text', () => {
   it('describes each kind in one short line', () => {
     expect(itemText(tabata, cfg)).toBe('Tabata · 2 rounds');
-    expect(itemText(posture, cfg)).toBe('Posture · hang 40s');
+    expect(itemText(posture, cfg)).toBe('Posture · hang 40 s');
     expect(itemText(rope, cfg)).toBe('Rope · 350 turns');
-    expect(itemText(silence, cfg)).toBe('Rest · silence .0104');
+    expect(itemText(silence, cfg)).toBe('Rest · silence 900 s');
     expect(itemText(mood, cfg)).toBe('2 mood checks');
     expect(itemText(drill, cfg)).toBe('Pause drill');
   });
 
-  it('uses decimal days for session totals and singular units', () => {
-    expect(targetsText({ rounds: 1, totalSeconds: 5400 }, cfg)).toBe('1 round · .0625');
+  it('uses seconds for a session total and singular units', () => {
+    expect(targetsText({ rounds: 1, totalSeconds: 5400 }, cfg)).toBe('1 round · 5400 s');
     expect(itemText({ id: 'x', kind: 'workout', routineId: 'unknown', targets: {} }, cfg)).toBe('Workout');
   });
 
@@ -44,7 +44,7 @@ describe('item text', () => {
 
   it('summarizes a day: main items first, counts after', () => {
     expect(daySummary([tabata, mood, drill], cfg)).toEqual({ title: 'Tabata · 2 rounds', meta: '2 mood checks · pause drill' });
-    expect(daySummary([silence, mood], cfg)).toEqual({ title: 'Rest · silence .0104', meta: '2 mood checks' });
+    expect(daySummary([silence, mood], cfg)).toEqual({ title: 'Rest · silence 900 s', meta: '2 mood checks' });
     expect(daySummary([mood], cfg)).toEqual({ title: '2 mood checks', meta: '' });
   });
 });

@@ -5,6 +5,7 @@ import { FOCUS_ROUTINE, focusOfDay } from '../../domain/engine';
 import { approvalFor, canEditDay, dayStartUnix, findPlan, saveDayPlan } from '../../domain/plan';
 import type { TargetMetric } from '../../domain/types';
 import { nowUnix } from '../../time/clock';
+import { formatSeconds } from '../../time/seconds';
 import { cycleOf, formatDuration, shortDay } from '../../time/daykeep';
 import { Button, IconButton } from '../../ui/Button';
 import { ChipGroup } from '../../ui/Chip';
@@ -297,12 +298,12 @@ function TargetRow({
       <div className="flex items-center gap-3">
         <label htmlFor={id} className="min-w-0 flex-1 truncate text-base text-ink">
           {label}
-          {metric === 'hangSeconds' && <span className="text-ink-muted"> (s)</span>}
+          {(metric === 'hangSeconds' || metric === 'totalSeconds') && <span className="text-ink-muted"> (s)</span>}
         </label>
         <input
           id={id}
           data-target-input
-          inputMode={metric === 'totalSeconds' ? 'decimal' : 'numeric'}
+          inputMode="numeric"
           autoComplete="off"
           value={text}
           aria-invalid={invalid || undefined}
@@ -337,7 +338,7 @@ function RestCard({ item, onChange }: { item: Extract<DraftMain, { kind: 'rest' 
       <div data-target className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           <label htmlFor={id} className="min-w-0 flex-1 truncate text-base text-ink">
-            Duration
+            Duration <span className="text-ink-muted">(s)</span>
           </label>
           <span aria-hidden className="text-sm tabular-nums text-ink-muted">
             {seconds === null ? '' : minutesHint(seconds)}
@@ -345,7 +346,7 @@ function RestCard({ item, onChange }: { item: Extract<DraftMain, { kind: 'rest' 
           <input
             id={id}
             data-target-input
-            inputMode="decimal"
+            inputMode="numeric"
             autoComplete="off"
             value={item.text}
             aria-invalid={seconds === null || undefined}
@@ -355,7 +356,7 @@ function RestCard({ item, onChange }: { item: Extract<DraftMain, { kind: 'rest' 
           />
         </div>
         <p id={`${id}-hint`} data-last-hint className="truncate text-sm tabular-nums text-ink-muted">
-          {last === null ? 'no data yet' : `last ${formatDuration(last, cfg)}`} · decimal days or 15m
+          {last === null ? 'no data yet' : `last ${formatSeconds(last)}`} · in seconds
         </p>
       </div>
     </div>

@@ -13,6 +13,16 @@ export function nowUnix(): number {
   return Math.floor(Date.now() / 1000) + offsetSeconds;
 }
 
+/**
+ * Current time in milliseconds on the same (possibly moved) clock, for
+ * timers that need sub-second precision (workout HUD, rest timer, drill).
+ * Wall-clock based, so a timer derived from it survives tab backgrounding
+ * and device sleep.
+ */
+export function nowMs(): number {
+  return Date.now() + offsetSeconds * 1000;
+}
+
 /** Make nowUnix() return `unixSeconds` right now and keep ticking from there. */
 export function setNow(unixSeconds: number): void {
   offsetSeconds = Math.floor(unixSeconds) - Math.floor(Date.now() / 1000);

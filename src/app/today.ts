@@ -4,7 +4,9 @@
  * No React here (unit-tested in today.test.ts).
  */
 
-import { cycleOf, formatDuration, type DayConfig } from '../time/daykeep';
+import { cycleOf, type DayConfig } from '../time/daykeep';
+import { formatSeconds } from '../time/seconds';
+import { routineSeconds } from '../workout/phases';
 import { findRoutine, level, overloadMultiplier, scaleRoutine } from '../domain/engine';
 import { approvalFor, dayAt, dayStartUnix } from '../domain/plan';
 import type { DayEvaluation, ItemProgress, RecordSummary } from '../domain/record';
@@ -92,16 +94,18 @@ export function scaledRoutine(routineId: string, sessions: WorkoutSession[], cus
   return base && scaleRoutine(base, overloadMultiplier(sessions), level(sessions));
 }
 
-/** Primary label for an item: "Start Tabata · .0083", "Check in", "Start pause drill". */
+export { routineSeconds };
+
+/** Primary label for an item: "Start Tabata · 712 s", "Check in", "Start pause drill". */
 export function primaryText(item: PlanItem, cfg: DayConfig, sessions: WorkoutSession[] = [], custom: WorkoutRoutine[] = []): string {
   switch (item.kind) {
     case 'workout': {
       const name = routineName(item.routineId, custom);
       const r = scaledRoutine(item.routineId, sessions, custom);
-      return r ? `Start ${name} · ${formatDuration(r.estimatedDurationMinutes * 60, cfg)}` : `Start ${name}`;
+      return r ? `Start ${name} · ${formatSeconds(routineSeconds(r))}` : `Start ${name}`;
     }
     case 'rest':
-      return `Start ${item.restKind} · ${formatDuration(item.durationSeconds, cfg)}`;
+      return `Start ${item.restKind} · ${formatSeconds(item.durationSeconds)}`;
     case 'mood':
       return 'Check in';
     case 'drill':

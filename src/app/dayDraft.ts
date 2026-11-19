@@ -3,7 +3,9 @@
  * items on save. Pure; unit-tested in dayDraft.test.ts.
  */
 
-import { formatDuration, parseDuration, type DayConfig } from '../time/daykeep';
+import type { DayConfig } from '../time/daykeep';
+import { formatSeconds, parseSeconds } from '../time/seconds';
+import { routineSeconds } from '../workout/phases';
 import { itemId, validatePlanItems } from '../domain/plan';
 import {
   findRoutine,
@@ -55,16 +57,9 @@ export type DraftProblem = 'empty' | 'bad_target' | 'bad_duration' | 'invalid';
 
 /* --- durations ------------------------------------------------------------ */
 
-/**
- * A session length as typed: decimal days (".0104", "0.0104") or minutes
- * ("15m", "15 min"). Must be above zero and under one day. Returns seconds.
- */
+/** A session length as typed, in whole seconds ("900", "900 s"); above zero and under one day. */
 export function parseDurationInput(text: string, cfg: DayConfig): number | null {
-  const s = text.trim().toLowerCase();
-  const min = /^(\d+(?:\.\d+)?)\s*(?:m|min|mins|minutes?)$/.exec(s);
-  const seconds = min ? Math.round(Number(min[1]) * 60) : parseDuration(s, cfg);
-  if (seconds === null || !Number.isFinite(seconds) || seconds <= 0 || seconds >= cfg.dayLength) return null;
-  return seconds;
+  return parseSeconds(text, cfg.dayLength);
 }
 
 /** "≈ 15 min" under a decimal duration field. */
@@ -101,7 +96,8 @@ export function suggestedValue(
       return findRoutine(routineId, custom)?.rounds ?? null;
     case 'totalSeconds': {
       const r = findRoutine(routineId, custom);
-      return r ? r.estimatedDurationMinutes * 60 : null;
+      // The base routine as the HUD runs it: the scaled session is never shorter, so the target is reachable.
+      return r ? routineSeconds(r) : null;
     }
   }
 }
@@ -120,8 +116,7 @@ export function lastRest(restKind: string, rests: RestSession[]): number | null 
 }
 
 export function formatMetric(metric: TargetMetric, value: number, cfg: DayConfig): string {
-  if (metric === 'totalSeconds') return formatDuration(value, cfg);
-  if (metric === 'hangSeconds') return `${value} s`;
+  if (metric === 'totalSeconds' || metric === 'hangSeconds') return formatSeconds(value);
   return String(value);
 }
 
@@ -133,7 +128,7 @@ export function hintText(last: string | null, suggested: string | null): string 
 
 /** Text a target field starts with. */
 export function metricText(metric: TargetMetric, value: number, cfg: DayConfig): string {
-  return metric === 'totalSeconds' ? formatDuration(value, cfg) : String(value);
+  return String(value);
 }
 
 /* --- draft ⇄ items ---------------------------------------------------------- */
@@ -157,7 +152,7 @@ export function draftFromItems(items: PlanItem[], cfg: DayConfig): DayDraft {
           key: newKey(),
           kind: 'rest',
           restKind: item.restKind,
-          text: formatDuration(item.durationSeconds, cfg),
+          text: String(item.durationSeconds),
           seconds: item.durationSeconds,
         });
         break;
@@ -178,7 +173,7 @@ export function newWorkout(routineId: string, history: WorkoutSession[], cfg: Da
 }
 
 export function newRest(cfg: DayConfig, restKind: string = REST_KINDS[0], seconds = DEFAULT_REST_SECONDS): DraftMain {
-  return { key: newKey(), kind: 'rest', restKind, text: formatDuration(seconds, cfg), seconds };
+  return { key: newKey(), kind: 'rest', restKind, text: String(seconds), seconds };
 }
 
 /** Parse a target field: whole numbers ≥ 1, or a duration for total time. */
@@ -211,7 +206,7 @@ export function draftToItems(
       items.push({ id: id(), kind: 'workout', routineId: m.routineId, targets });
     } else {
       const v =
-        m.seconds !== undefined && m.text === formatDuration(m.seconds, cfg) ? m.seconds : parseDurationInput(m.text, cfg);
+        m.seconds !== undefined && m.text === String(m.seconds) ? m.seconds : parseDurationInput(m.text, cfg);
       if (v === null) problems.add('bad_duration');
       items.push({ id: id(), kind: 'rest', restKind: m.restKind, durationSeconds: v ?? 0 });
     }
@@ -226,6 +221,6 @@ export function draftToItems(
 export const PROBLEM_TEXT: Record<DraftProblem, string> = {
   empty: 'Plan at least one thing — rest counts',
   bad_target: 'Targets are whole numbers above 0',
-  bad_duration: 'Durations look like .0104 or 15m',
+  bad_duration: 'Durations are whole seconds, e.g. 900',
   invalid: "This plan can't be saved",
 };
