@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -8,5 +9,9 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
-  }
+  },
+  // Vitest runs unit tests under src/ only; tests/ux is Playwright's (playwright.config.ts).
+  test: {
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+  },
 });

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Screenshots (npm run shots) and Playwright output
+shots/
+test-results/
+playwright-report/

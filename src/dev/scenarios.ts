@@ -23,6 +23,8 @@ export interface Scenario {
   now?: string;
   /** Storage contents: key → JSON-serializable value. Everything else is cleared. */
   storage: Record<string, unknown>;
+  /** Screen to open, passed as `&screen=<value>` by scripts/shots.mjs and tests/ux. */
+  screen?: string;
 }
 
 export const SCENARIOS: Record<string, Scenario> = {
