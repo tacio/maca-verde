@@ -351,6 +351,11 @@ export interface BackupFile {
   data: AppData;
 }
 
+/** Download name of an exported backup: the day number, never a civil date. */
+export function backupFileName(day: number): string {
+  return `maca-verde-backup-${day}.json`;
+}
+
 export function exportBackup(data: AppData, exportedUnix?: number): string {
   const file: BackupFile = { format: BACKUP_FORMAT, version: BACKUP_VERSION, data };
   if (exportedUnix !== undefined) file.exportedUnix = exportedUnix;

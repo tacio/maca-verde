@@ -21,6 +21,12 @@ function recordOf(name: string): { r: RecordSummary; now: number } {
   return { r: computeRecord(data, now, data.settings.config), now };
 }
 
+/** Settings scenarios: a normal mid-cycle record with no pending justification. */
+const settled = (r: RecordSummary) => {
+  expect(r.streak).toBe(15);
+  expect(r.pendingJustifications).toEqual([]);
+};
+
 const EXPECT: Record<string, (r: RecordSummary) => void> = {
   warmup: (r) => {
     expect(r.todayEval.status).toBe('outside');
@@ -107,6 +113,24 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
     expect(r.days.length).toBeGreaterThanOrEqual(106);
   },
   settings: (r) => expect(r.recordStartDay).not.toBeNull(),
+  history: (r) => expect(r.averageDays).toBe(100),
+  'history-day': (r) => {
+    expect(r.days.find((d) => d.day === r.today - 1)?.status).toBe('missed');
+    expect(r.days.find((d) => d.day === r.today - 1)?.justification).toBeDefined();
+  },
+  'history-day-done': (r) => expect(r.days.find((d) => d.day === r.today - 2)?.status).toBe('done'),
+  'settings-day': settled,
+  'settings-day-confirm': settled,
+  'settings-anchor': settled,
+  'settings-coach': settled,
+  'settings-template': settled,
+  'settings-template-slot': settled,
+  'settings-routines': settled,
+  'settings-routine-edit': settled,
+  'settings-routine': settled,
+  'settings-data': settled,
+  'settings-data-connected': settled,
+  'settings-reset': settled,
   'hud-work': workoutUndone,
   'hud-rest': workoutUndone,
   'hud-paused': workoutUndone,

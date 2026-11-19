@@ -29,7 +29,7 @@
 import { DEFAULT_CONFIG, cycleOf, formatStamp, fromUnix, type DayConfig } from '../time/daykeep';
 import { cycleDays, dayStartUnix } from '../domain/plan';
 import { findRoutine, suggestDay } from '../domain/engine';
-import type { AppData, DayPlan, PlanItem, WorkoutItem, WorkoutSession } from '../domain/types';
+import type { AppData, DayPlan, PlanItem, WorkoutItem, WorkoutRoutine, WorkoutSession } from '../domain/types';
 import { emptyData, toStorageEntries } from '../storage/store';
 
 export interface FixtureOptions {
@@ -204,6 +204,44 @@ const HUNDRED =
   ['DDDDDDDDDD', 'DDDMDDDDDD', 'DDDDDDDDDD', 'DDDDDMMDDD', 'DDDDDDDDDD', 'DDDDDDDDMD', 'DDDDDDDDDD', 'DMDDDDDDDD', 'DDDDDDDDDD', 'DDDDDDDDDD', 'DDDDD'].join('') +
   'T';
 
+/** Varied neck scores and moods over the last 10 days, so the trends show a shape. */
+function varyTrends(data: AppData, f: Fixture): void {
+  const today = Math.floor((f.now - f.config.epoch) / f.config.dayLength);
+  const neck = [4, 3, 3, 2, 3, 2, 1, 2, 1, 1];
+  const valences = ['frustrated', 'neutral', 'good', 'good', 'exhausted', 'good', 'great', 'good', 'great', 'good'] as const;
+  for (const s of data.sessions) {
+    const back = today - Math.floor((s.endUnix - f.config.epoch) / f.config.dayLength);
+    if (back >= 0 && back < 10) s.neck = neck[9 - back];
+  }
+  for (const m of data.moods) {
+    const back = today - Math.floor((m.unix - f.config.epoch) / f.config.dayLength);
+    if (back >= 0 && back < 10 && (back !== 3 || m.id.endsWith('-0'))) m.valence = valences[9 - back];
+  }
+}
+
+const CUSTOM_ROUTINE: WorkoutRoutine = {
+  id: 'custom-evening-rope',
+  title: 'Evening rope',
+  subtitle: '',
+  protocol: 'circuit',
+  description: '',
+  primaryGoal: 'hybrid',
+  exercises: [
+    { exerciseId: 'rope-boxer-skip-hiit', workSeconds: 45, restSeconds: 15 },
+    { exerciseId: 'door-bar-dead-hang', workSeconds: 30, restSeconds: 30 },
+    { exerciseId: 'chin-tuck-cobra-hold', workSeconds: 30, restSeconds: 15 },
+  ],
+  rounds: 3,
+  roundRestSeconds: 60,
+  prepSeconds: 10,
+  estimatedCalories: 53,
+  estimatedDurationMinutes: 9,
+};
+
+function addCustomRoutine(data: AppData): void {
+  data.routines.push(structuredClone(CUSTOM_ROUTINE));
+}
+
 export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
   warmup: {
     description: 'Day of setup; the record starts tomorrow',
@@ -339,9 +377,26 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     screen: 'progress',
   },
   'progress-100': {
-    description: 'Progress with 105 closed days of history',
+    description: 'Progress with 105 closed days: clean cycles marked, records, 10-day neck and mood trends',
     fixture: { history: HUNDRED, today: TODAY },
+    tweak: varyTrends,
     screen: 'progress',
+  },
+  history: {
+    description: 'History: record days newest first, misses with their reasons',
+    fixture: { history: HUNDRED, today: TODAY },
+    tweak: varyTrends,
+    screen: 'history',
+  },
+  'history-day': {
+    description: 'One closed, missed day (354): plan items, the mood check logged, the reason',
+    fixture: { history: since14340(run(14) + 'M', 'T'), today: TODAY },
+    screen: `history:${TODAY - 1}`,
+  },
+  'history-day-done': {
+    description: 'One done day (353): plan, workout session in seconds, mood checks, drill',
+    fixture: { history: since14340(run(14) + 'M', 'T'), today: TODAY },
+    screen: `history:${TODAY - 2}`,
   },
   'hud-work': {
     description: "Workout HUD on today's Rope, first work phase (accent screen, bare seconds)",
@@ -396,6 +451,77 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     description: 'Settings',
     fixture: { history: STANDARD, today: TODAY },
     screen: 'settings',
+  },
+  'settings-day': {
+    description: 'Settings → Day: day 0 and day length with the live preview',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-day',
+  },
+  'settings-day-confirm': {
+    description: 'Settings → Day after changing day 0: confirm that day numbers change',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-day:confirm',
+  },
+  'settings-anchor': {
+    description: 'Settings → Anchor',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-anchor',
+  },
+  'settings-coach': {
+    description: 'Settings → Coach: voice and beeps, Test voice',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-coach',
+  },
+  'settings-template': {
+    description: 'Settings → Template: 9 slots from cycle 1434, slot 7 empty',
+    fixture: { history: STANDARD, today: TODAY },
+    tweak: (data) => {
+      data.template = data.template.map((_, i) => (i === 7 ? [] : (data.plans.find((p) => p.day === 14340 + i)?.items ?? [])));
+    },
+    screen: 'settings-template',
+  },
+  'settings-template-slot': {
+    description: 'Settings → Template → slot 3, edited with the day editor cards',
+    fixture: { history: STANDARD, today: TODAY },
+    tweak: (data) => {
+      data.template[3] = data.plans.find((p) => p.day === 14343)!.items;
+    },
+    screen: 'settings-template:3',
+  },
+  'settings-routines': {
+    description: 'Settings → Routines: one custom routine, the built-in ones',
+    fixture: { history: STANDARD, today: TODAY },
+    tweak: addCustomRoutine,
+    screen: 'settings-routines',
+  },
+  'settings-routine-edit': {
+    description: 'Settings → Routines → edit a custom routine',
+    fixture: { history: STANDARD, today: TODAY },
+    tweak: addCustomRoutine,
+    screen: `settings-routine-edit:${CUSTOM_ROUTINE.id}`,
+  },
+  'settings-routine': {
+    description: 'Settings → Routines → a built-in routine, read-only, How? per exercise',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-routine:tabata-belly-shred',
+  },
+  'settings-data': {
+    description: 'Settings → Data: export / import, Drive not connected (offline)',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-data',
+  },
+  'settings-data-connected': {
+    description: 'Settings → Data with Drive connected (simulated, no network) and a last backup stamp',
+    fixture: { history: STANDARD, today: TODAY },
+    tweak: (data, f) => {
+      data.settings.drive = { clientId: '123-example.apps.googleusercontent.com', autoBackup: true, lastBackupUnix: f.now - 5000 };
+    },
+    screen: 'settings-data:connected',
+  },
+  'settings-reset': {
+    description: 'Settings → Reset: replay setup, erase with typed confirmation',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'settings-reset',
   },
 };
 

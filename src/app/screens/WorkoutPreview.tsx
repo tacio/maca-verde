@@ -1,6 +1,6 @@
 import { ChevronDown, Play } from 'lucide-react';
 import { EXERCISES } from '../../data/exercises';
-import type { WorkoutItem } from '../../domain/types';
+import type { WorkoutItem, WorkoutRoutine } from '../../domain/types';
 import { formatSeconds } from '../../time/seconds';
 import { Button } from '../../ui/Button';
 import { Sheet } from '../../ui/Sheet';
@@ -52,48 +52,55 @@ export function WorkoutPreview({ item, onClose }: { item: WorkoutItem; onClose: 
             {routine.rounds === 1 ? 'One round' : `${routine.rounds} rounds`} of {routine.exercises.length}
             {routine.rounds > 1 ? ` · ${routine.roundRestSeconds} s between rounds` : ''}
           </h3>
-          <ol className="-mx-3 flex flex-col">
-            {routine.exercises.map((ex, i) => {
-              const info = EXERCISES[ex.exerciseId];
-              return (
-                <li key={`${ex.exerciseId}-${i}`}>
-                  <details data-disclosure className="group">
-                    <summary
-                      className={cx(
-                        'flex min-h-14 cursor-pointer list-none items-center gap-3 rounded-card px-3 py-2',
-                        'transition-colors duration-fast ease-calm hover:bg-surface-2 [&::-webkit-details-marker]:hidden',
-                        focusRing,
-                      )}
-                    >
-                      <span className="w-5 shrink-0 text-sm tabular-nums text-ink-muted">{i + 1}</span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-base text-ink">{info?.name ?? ex.exerciseId}</span>
-                        <span className="truncate text-sm tabular-nums text-ink-muted">
-                          {ex.workSeconds} s · rest {ex.restSeconds} s
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-accent">
-                        How?
-                        <ChevronDown aria-hidden size={16} className="transition-transform duration-fast ease-calm group-open:rotate-180" />
-                      </span>
-                    </summary>
-                    {info && (
-                      <div className="px-3 pb-3 pl-11 text-sm leading-relaxed text-ink-muted">
-                        <ul className="list-disc pl-4">
-                          {info.formPoints.map((f) => (
-                            <li key={f}>{f}</li>
-                          ))}
-                        </ul>
-                        {info.cadenceTip && <p className="pt-1">{info.cadenceTip}</p>}
-                      </div>
-                    )}
-                  </details>
-                </li>
-              );
-            })}
-          </ol>
+          <ExerciseList exercises={routine.exercises} />
         </section>
       )}
     </Sheet>
+  );
+}
+
+/** A routine's exercises with their intervals, each with a "How?" disclosure (J10, P10). */
+export function ExerciseList({ exercises }: { exercises: WorkoutRoutine['exercises'] }) {
+  return (
+    <ol className="-mx-3 flex flex-col">
+      {exercises.map((ex, i) => {
+        const info = EXERCISES[ex.exerciseId];
+        return (
+          <li key={`${ex.exerciseId}-${i}`}>
+            <details data-disclosure className="group">
+              <summary
+                className={cx(
+                  'flex min-h-14 cursor-pointer list-none items-center gap-3 rounded-card px-3 py-2',
+                  'transition-colors duration-fast ease-calm hover:bg-surface-2 [&::-webkit-details-marker]:hidden',
+                  focusRing,
+                )}
+              >
+                <span className="w-5 shrink-0 text-sm tabular-nums text-ink-muted">{i + 1}</span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-base text-ink">{info?.name ?? ex.exerciseId}</span>
+                  <span className="truncate text-sm tabular-nums text-ink-muted">
+                    {ex.workSeconds} s · rest {ex.restSeconds} s
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-accent">
+                  How?
+                  <ChevronDown aria-hidden size={16} className="transition-transform duration-fast ease-calm group-open:rotate-180" />
+                </span>
+              </summary>
+              {info && (
+                <div className="px-3 pb-3 pl-11 text-sm leading-relaxed text-ink-muted">
+                  <ul className="list-disc pl-4">
+                    {info.formPoints.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                  {info.cadenceTip && <p className="pt-1">{info.cadenceTip}</p>}
+                </div>
+              )}
+            </details>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

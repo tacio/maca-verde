@@ -1,6 +1,6 @@
 import { Anchor, ChevronRight, Clock, Database, LayoutTemplate, ListOrdered, RotateCcw, Volume2, type LucideIcon } from 'lucide-react';
 import { WORKOUT_ROUTINES } from '../../data/routines';
-import { formatDuration } from '../../time/daykeep';
+import { formatDuration, formatStamp, fromUnix } from '../../time/daykeep';
 import { Button } from '../../ui/Button';
 import { FullScreen } from '../../ui/FullScreen';
 import { ListRow } from '../../ui/ListRow';
@@ -33,7 +33,7 @@ export function SettingsScreen() {
       title: 'Routines',
       meta: `${WORKOUT_ROUTINES.length} built-in · ${data.routines.length} custom`,
     },
-    { id: 'data', icon: Database, title: 'Data', meta: s.drive.lastBackupUnix ? 'Backed up to Drive' : 'Export, import, Drive backup' },
+    { id: 'data', icon: Database, title: 'Data', meta: s.drive.lastBackupUnix !== undefined ? `Last Drive backup ${formatStamp(fromUnix(s.drive.lastBackupUnix, cfg), cfg)}` : 'Export, import, Drive backup' },
     { id: 'reset', icon: RotateCcw, title: 'Reset', meta: 'Replay setup or erase data' },
   ];
 

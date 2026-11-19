@@ -116,6 +116,14 @@ export function classifyDay(day: number, record: RecordSummary): CellKind {
 export interface GridRow {
   cycle: number;
   cells: { day: number; kind: CellKind }[];
+  /** 10 of 10 days actually done — none missed, none protected (brief → clean cycles). */
+  clean: boolean;
+}
+
+/** A clean cycle: every one of its 10 days is in the record and done. A kept day is a miss, so it never counts. */
+export function isCleanCycle(cycle: number, record: RecordSummary): boolean {
+  for (let i = 0; i < 10; i++) if (classifyDay(cycle * 10 + i, record) !== 'done') return false;
+  return true;
 }
 
 /** 10 rows × 10 days: the cycle holding today is the last row (02-workflows J8). */
@@ -123,13 +131,11 @@ export function lastHundredGrid(record: RecordSummary): GridRow[] {
   const last = cycleOf(record.today);
   return Array.from({ length: 10 }, (_, r) => {
     const cycle = last - 9 + r;
-    return {
-      cycle,
-      cells: Array.from({ length: 10 }, (_, i) => {
-        const day = cycle * 10 + i;
-        return { day, kind: classifyDay(day, record) };
-      }),
-    };
+    const cells = Array.from({ length: 10 }, (_, i) => {
+      const day = cycle * 10 + i;
+      return { day, kind: classifyDay(day, record) };
+    });
+    return { cycle, cells, clean: cells.every((c) => c.kind === 'done') };
   });
 }
 

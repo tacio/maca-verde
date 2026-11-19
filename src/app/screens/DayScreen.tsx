@@ -102,16 +102,12 @@ const REST_OPTIONS = REST_KINDS.map((k) => ({ value: k, label: k[0].toUpperCase(
 function DayEditor({ day, blank }: { day: number; blank?: boolean }) {
   const { data, now, cfg, update } = useApp();
   const { close } = useNav();
-  const custom = data.routines;
   const [draft, setDraft] = useState<DayDraft>(() =>
     blank ? { main: [], mood: 0, drill: 0 } : draftFromItems(draftForDay(data, day, now, cfg), cfg),
   );
   const result = draftToItems(draft, day, cfg);
   const approved = !!approvalFor(data.cycles, cycleOf(day));
   const locksIn = formatDuration(dayStartUnix(day, cfg) - now, cfg);
-
-  const setMain = (key: string, fn: (m: DraftMain) => DraftMain | null) =>
-    setDraft((d) => ({ ...d, main: d.main.flatMap((m) => (m.key === key ? (fn(m) ?? []) : [m])) }));
 
   const save = () => {
     if (!result.ok) return;
@@ -143,6 +139,32 @@ function DayEditor({ day, blank }: { day: number; blank?: boolean }) {
         {approved ? '' : ' · draft'}
       </p>
 
+      <DraftEditor draft={draft} setDraft={setDraft} focusDay={day} />
+    </FullScreen>
+  );
+}
+
+/**
+ * The items of one plan being edited: workout and rest cards, + Workout / + Rest,
+ * and the mood/drill counts. Shared by the day editor and the template slot editor.
+ */
+export function DraftEditor({
+  draft,
+  setDraft,
+  focusDay,
+}: {
+  draft: DayDraft;
+  setDraft: (fn: (d: DayDraft) => DayDraft) => void;
+  /** Day whose rotation picks the routine of a new workout. */
+  focusDay: number;
+}) {
+  const { data, cfg } = useApp();
+  const custom = data.routines;
+  const day = focusDay;
+  const setMain = (key: string, fn: (m: DraftMain) => DraftMain | null) =>
+    setDraft((d) => ({ ...d, main: d.main.flatMap((m) => (m.key === key ? (fn(m) ?? []) : [m])) }));
+  return (
+    <>
       <div className="flex flex-col gap-4">
         {draft.main.map((m) =>
           m.kind === 'workout' ? (
@@ -189,7 +211,7 @@ function DayEditor({ day, blank }: { day: number; blank?: boolean }) {
           onChange={(drill) => setDraft((d) => ({ ...d, drill }))}
         />
       </section>
-    </FullScreen>
+    </>
   );
 }
 

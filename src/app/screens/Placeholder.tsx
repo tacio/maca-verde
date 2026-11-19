@@ -5,16 +5,7 @@ import { FullScreen } from '../../ui/FullScreen';
 import { useNav } from '../nav';
 
 /** Screens reachable from the shell that later milestones build. */
-export const PLANNED_SCREENS: Record<string, { title: string; milestone: string }> = {
-  history: { title: 'History', milestone: 'M6' },
-  'settings-day': { title: 'Day', milestone: 'M6' },
-  'settings-anchor': { title: 'Anchor', milestone: 'M6' },
-  'settings-coach': { title: 'Coach', milestone: 'M6' },
-  'settings-template': { title: 'Template', milestone: 'M6' },
-  'settings-routines': { title: 'Routines', milestone: 'M6' },
-  'settings-data': { title: 'Data', milestone: 'M6' },
-  'settings-reset': { title: 'Reset', milestone: 'M6' },
-};
+export const PLANNED_SCREENS: Record<string, { title: string; milestone: string }> = {};
 
 /** A calm stand-in for a screen that isn't built yet; names the screen and its milestone. */
 export function PlaceholderScreen({ name }: { name: string }) {

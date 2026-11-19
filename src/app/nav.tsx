@@ -16,6 +16,8 @@ export interface Nav {
   /** Swap the top flow for another (e.g. workout preview → workout) without a back step to it. */
   replace: (flow: string) => void;
   close: () => void;
+  /** Close every flow (back to the tabs), e.g. after a reset. */
+  closeAll: () => void;
   /**
    * While set, the back gesture on a pushed flow calls `guard` instead of
    * closing it (the workout HUD opens its pause sheet). close() still closes.
@@ -58,9 +60,20 @@ export function initialView(screen: string | null): InitialView {
   if (step !== null && (ONBOARD_STEPS as readonly string[]).includes(step))
     return { tab: 'today', flows: [], onboardStep: step as OnboardStep };
   if (TAB_SCREENS.includes(screen)) return { tab: screen as Tab, flows: [] };
-  // Settings lives behind the gear on Progress (02-workflows §2).
-  if (screen === 'settings') return { tab: 'progress', flows: ['settings'] };
+  // Settings and history live on Progress (02-workflows §2): restore the flows under them too.
+  const parents = progressParents(screen);
+  if (parents) return { tab: 'progress', flows: [...parents, screen] };
   return { tab: 'today', flows: [screen] };
+}
+
+/** Flows under a Progress screen (so back walks up), or null when it isn't one. */
+export function progressParents(screen: string): string[] | null {
+  const { name } = parseFlow(screen);
+  if (name === 'settings' || name === 'history') return screen === name ? [] : [name];
+  if (name === 'settings-routine' || name === 'settings-routine-edit') return ['settings', 'settings-routines'];
+  if (name === 'settings-template' && screen !== name) return ['settings', 'settings-template'];
+  if (name.startsWith('settings-')) return ['settings'];
+  return null;
 }
 
 const last = <T,>(xs: T[]): T | undefined => xs[xs.length - 1];
@@ -78,9 +91,14 @@ export function NavProvider({ initial, children }: { initial: InitialView; child
   stackRef.current = stack;
   const guardRef = useRef<(() => void) | null>(null);
   const closingRef = useRef(false);
+  const ignorePopRef = useRef(false);
 
   useEffect(() => {
     const onPop = () => {
+      if (ignorePopRef.current) {
+        ignorePopRef.current = false;
+        return;
+      }
       // Our pushed entries are popped by the browser; drop the top one.
       const top = last(stackRef.current);
       const closing = closingRef.current;
@@ -120,6 +138,15 @@ export function NavProvider({ initial, children }: { initial: InitialView; child
     } else setStack((s) => s.slice(0, -1));
   }, []);
 
+  const closeAll = useCallback(() => {
+    const pushed = stackRef.current.filter((e) => e.pushed).length;
+    setStack([]);
+    if (pushed) {
+      ignorePopRef.current = true;
+      window.history.go(-pushed);
+    }
+  }, []);
+
   const setBackGuard = useCallback((guard: (() => void) | null) => {
     guardRef.current = guard;
   }, []);
@@ -130,8 +157,8 @@ export function NavProvider({ initial, children }: { initial: InitialView; child
   }, []);
 
   const value = useMemo<Nav>(
-    () => ({ tab, setTab, flow: last(stack)?.flow ?? null, open, replace, close, setBackGuard }),
-    [tab, setTab, stack, open, replace, close, setBackGuard],
+    () => ({ tab, setTab, flow: last(stack)?.flow ?? null, open, replace, close, closeAll, setBackGuard }),
+    [tab, setTab, stack, open, replace, close, closeAll, setBackGuard],
   );
   return <NavContext.Provider value={value}>{children}</NavContext.Provider>;
 }

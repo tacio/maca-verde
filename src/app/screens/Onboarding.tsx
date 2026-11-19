@@ -28,11 +28,25 @@ export const DEFAULT_EPOCH_TEXT = '2000-01-01 00:00 +0000';
 /** One-tap preset: a day that starts at 03:00 in UTC−3. */
 export const PRESET_EPOCH_TEXT = '2000-01-01 03:00 -0300';
 
-const IMPORT_ERRORS: Record<string, string> = {
+export const IMPORT_ERRORS: Record<string, string> = {
   not_json: "That file isn't a backup.",
   not_a_backup: "That file isn't a Maçã Verde backup.",
   unsupported_version: 'That backup is from another version.',
 };
+
+/** A message for a failed importBackup(). */
+export function importErrorText(error: string): string {
+  return IMPORT_ERRORS[error] ?? `That backup is damaged (${error.replace(/^invalid:/, '')}).`;
+}
+
+/** The epoch as typed in the Day 0 field: the known presets as written, otherwise in UTC. */
+export function epochText(epoch: number): string {
+  for (const t of [DEFAULT_EPOCH_TEXT, PRESET_EPOCH_TEXT]) if (parseDate(t) === epoch) return t;
+  const d = new Date(epoch * 1000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  const sec = d.getUTCSeconds() ? `:${p(d.getUTCSeconds())}` : '';
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}${sec} +0000`;
+}
 
 /** Read the day settings as typed; an error message per field. */
 export function readDayConfig(
@@ -197,7 +211,7 @@ function DayStep({
       setRestoreError(null);
       onRestored(r.data);
     } else {
-      setRestoreError(IMPORT_ERRORS[r.error] ?? `That backup is damaged (${r.error.replace(/^invalid:/, '')}).`);
+      setRestoreError(importErrorText(r.error));
     }
   };
 
@@ -256,7 +270,7 @@ function DayStep({
   );
 }
 
-function DayPreview({ cfg, now }: { cfg: DayConfig; now: number }) {
+export function DayPreview({ cfg, now }: { cfg: DayConfig; now: number }) {
   const s = fromUnix(now, cfg);
   return (
     <div aria-live="polite" className="rounded-card bg-accent-soft p-4 tabular-nums">

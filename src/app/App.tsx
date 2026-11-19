@@ -6,6 +6,7 @@ import { NavProvider, initialView, intArg, parseFlow, useNav, type OnboardStep }
 import { CycleScreen } from './screens/CycleScreen';
 import { DayScreen } from './screens/DayScreen';
 import { DrillScreen } from './screens/DrillScreen';
+import { HistoryDayScreen, HistoryScreen } from './screens/HistoryScreen';
 import { JustifyScreen } from './screens/JustifyScreen';
 import { MoodScreen } from './screens/MoodScreen';
 import { Onboarding } from './screens/Onboarding';
@@ -14,6 +15,11 @@ import { PlanScreen } from './screens/PlanScreen';
 import { ProgressScreen } from './screens/ProgressScreen';
 import { RestScreen } from './screens/RestScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { SettingsAnchorScreen, SettingsCoachScreen, SettingsDayScreen } from './screens/settings/BasicSettings';
+import { DataScreen } from './screens/settings/DataScreen';
+import { ResetScreen } from './screens/settings/ResetScreen';
+import { RoutineEditScreen, RoutineViewScreen, RoutinesScreen } from './screens/settings/RoutinesScreen';
+import { TemplateScreen, TemplateSlotScreen } from './screens/settings/TemplateScreen';
 import { TodayScreen } from './screens/TodayScreen';
 import { WorkoutLogScreen } from './screens/WorkoutLogScreen';
 import { WorkoutScreen, type HudStart } from './screens/WorkoutScreen';
@@ -34,6 +40,33 @@ function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
     switch (name) {
       case 'settings':
         return <SettingsScreen />;
+      case 'settings-day':
+        // Dev scenarios: `settings-day:confirm` opens the re-bucketing confirmation.
+        return <SettingsDayScreen key={flow} confirm={import.meta.env.DEV && args[0] === 'confirm'} />;
+      case 'settings-anchor':
+        return <SettingsAnchorScreen />;
+      case 'settings-coach':
+        return <SettingsCoachScreen />;
+      case 'settings-template': {
+        const slot = intArg(args[0]);
+        if (slot !== undefined && slot >= 0 && slot <= 9) return <TemplateSlotScreen key={flow} slot={slot} />;
+        return <TemplateScreen />;
+      }
+      case 'settings-routines':
+        return <RoutinesScreen />;
+      case 'settings-routine':
+        return <RoutineViewScreen key={flow} id={args.join(':')} />;
+      case 'settings-routine-edit':
+        return <RoutineEditScreen key={flow} id={args.join(':') || 'new'} />;
+      case 'settings-data':
+        // Dev scenarios: `settings-data:connected` simulates a Drive token (no network).
+        return <DataScreen connected={import.meta.env.DEV && args[0] === 'connected'} />;
+      case 'settings-reset':
+        return <ResetScreen />;
+      case 'history': {
+        const day = intArg(args[0]);
+        return day === undefined ? <HistoryScreen /> : <HistoryDayScreen key={flow} day={day} />;
+      }
       case 'cycle':
         return <CycleScreen key={flow} cycle={intArg(args[0])} />;
       case 'day-edit':

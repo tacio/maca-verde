@@ -3,6 +3,7 @@ import { nowUnix } from '../time/clock';
 import type { DayConfig } from '../time/daykeep';
 import { computeRecord, type RecordSummary } from '../domain/record';
 import type { AppData } from '../domain/types';
+import { setBackupStampSink } from '../storage/autoBackup';
 import { loadData, saveData } from '../storage/store';
 
 /** How often "now" (and the record) is refreshed: ≈ one daykeep tick (8.64 s). */
@@ -52,6 +53,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveData(next);
     setData(next);
   }, []);
+
+  // Auto-backup (storage/autoBackup.ts) stamps a finished upload into the data.
+  useEffect(() => {
+    setBackupStampSink((unix) =>
+      update((d) => ({ ...d, settings: { ...d.settings, drive: { ...d.settings.drive, lastBackupUnix: unix } } })),
+    );
+    return () => setBackupStampSink(null);
+  }, [update]);
 
   const value = useMemo<AppState>(() => ({ data, record, now, cfg, update }), [data, record, now, cfg, update]);
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
