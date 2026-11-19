@@ -68,7 +68,7 @@ All time handling follows [daykeep](../../../../utilities/daykeep/) conventions,
 - The planning cycle (10 days) and the moving average (100 days) are counted in daykeep days.
 - **Epoch and day length are set in onboarding** on first use (the browser can't read `~/.config/daykeep/config`) and travel with backups. The public code ships daykeep's default epoch only — never a personal one.
 - **No civil dates anywhere.** Day numbers may drop leading digits in tight spaces (`14359` → `359` → `59`), like omitting the year or month.
-- **Seconds are allowed for workout intervals and per-exercise targets** (heartbeat-scale, below daykeep's 8.64 s tick). Session lengths and totals use decimal days.
+- **Single activities are measured in seconds**: workout intervals, per-exercise targets, and the duration of each workout session or rest practice ("Start Rope · 720 s", "Rest · silence 900 s"). Seconds are heartbeat-scale. Decimal days are for day-level time only: time of day, time left in the day, day and cycle boundaries, and totals across sessions.
 
 ## Data
 
