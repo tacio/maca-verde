@@ -259,6 +259,16 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     description: "Day editor read-only on today's (locked) plan",
     fixture: { history: STANDARD, today: TODAY },
   },
+  plan: {
+    description: 'Plan: this cycle (approved) and the next one (not approved yet)',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'plan',
+  },
+  'plan-approved': {
+    description: 'Plan: the next cycle is already approved',
+    fixture: { history: STANDARD, today: TODAY, approveNext: true },
+    screen: 'plan',
+  },
   'progress-empty': {
     description: 'Progress with no history yet (record starts tomorrow)',
     fixture: { history: '.', today: TODAY },

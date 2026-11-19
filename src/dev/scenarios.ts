@@ -34,6 +34,11 @@ export const SCENARIOS: Record<string, Scenario> = {
     description: 'First use: empty storage, onboarding',
     storage: {},
   },
+  'ui-gallery': {
+    description: 'Every UI primitive in its states (src/dev/Gallery.tsx)',
+    storage: {},
+    screen: 'gallery',
+  },
   ...fixtureScenarios(),
 };
 

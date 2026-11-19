@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/tokens.css';
 import './index.css';
-import App from './App';
+import App from './app/App';
 
 async function start() {
   // Dev-only: ?scenario=…&now=… seeds storage and sets the clock (docs/design/03-tooling.md §4).

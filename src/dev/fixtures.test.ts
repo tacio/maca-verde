@@ -67,6 +67,8 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
   },
   'day-edit': (r) => expect(r.days.some((d) => d.status === 'upcoming')).toBe(true),
   'day-locked': (r) => expect(r.todayEval.status).toBe('today'),
+  plan: (r) => expect(r.days[r.days.length - 1].day).toBe(14359), // next cycle unplanned
+  'plan-approved': (r) => expect(r.days[r.days.length - 1].day).toBe(14369),
   'progress-empty': (r) => expect(r.averageDays).toBe(0),
   'progress-100': (r) => {
     expect(r.averageDays).toBe(100);

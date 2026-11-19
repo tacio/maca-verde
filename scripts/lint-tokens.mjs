@@ -14,7 +14,6 @@ const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 
 const LEGACY = new Set([
   'src/App.tsx',
-  'src/index.css',
   'src/components/CustomRoutineModal.tsx',
   'src/components/DataBackupView.tsx',
   'src/components/DemoTourModal.tsx',
