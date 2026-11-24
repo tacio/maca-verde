@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Full-bleed background (accent-soft) so the same art works as a maskable icon; the apple stays inside the 80% safe circle. -->
+  <rect width="100" height="100" fill="#e4f0da"/>
+  <g transform="translate(50 52) scale(0.78) translate(-50 -50)">
+    <path d="M50 34 C42 27 25 27 21 42 C17 57 26 77 37 81 C43 83 46 80 50 80 C54 80 57 83 63 81 C74 77 83 57 79 42 C75 27 58 27 50 34 Z" fill="#2f7a1f"/>
+    <path d="M50 35 C50 28 51.5 23 55 18" fill="none" stroke="#1f4f14" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M54 26 C57 17 65 13 73 14 C72 22 64 28 54 26 Z" fill="#8ccb55"/>
+    <path d="M33 46 C33 40 37 36 42 35" fill="none" stroke="#e4f0da" stroke-opacity="0.55" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

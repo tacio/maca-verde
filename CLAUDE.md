@@ -46,11 +46,14 @@ npm run lint:tokens  # P13 token lint
 npm run vectors      # regenerate daykeep golden vectors (needs local daykeep binary)
 npm run build        # tsc -b && vite build → dist/
 npm run preview      # serve the production build
+npm run icons        # re-render public/icon-*.png and apple-touch-icon.png from public/icon.svg
 ```
 
 Playwright uses its cached Chromium (`@playwright/test` pinned to 1.56.x); don't download browsers locally. `shots/`, `test-results/` are gitignored.
 
 **Visual baselines** (`tests/ux/visual.spec.ts`): every scenario × light/dark, viewport-sized, compared with `toHaveScreenshot` against `tests/ux/__screenshots__/<scenario>-<theme>.png` (committed; `snapshotPathTemplate` in `playwright.config.ts`, no platform suffix). Playwright's clock is paused before load (the scenario's `now` still places the app clock), so countdowns and moments are frozen; animations are disabled. Skipped when `CI` is set: the baselines use this machine's system fonts.
+
+**PWA** (`vite-plugin-pwa`, config in `vite.config.ts`): production builds get a manifest and a Workbox service worker that precaches the whole app (works offline). Dev has no service worker, so scenarios and Playwright are unaffected. Updates use `registerType: 'prompt'` with no prompt: a new version waits until every app window is closed, so it never reloads mid-workout. `src/storage/persist.ts` asks for persistent storage so localStorage isn't evicted.
 
 Deployment: pushing to `main` triggers `.github/workflows/deploy.yml` (npm ci → Playwright Chromium → `npm run check` → build → GitHub Pages). `vite.config.ts` uses `base: './'` so the bundle works under any subpath — keep asset paths relative.
 

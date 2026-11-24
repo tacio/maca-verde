@@ -12,7 +12,8 @@
     "check": "tsc -b && vitest run && node scripts/lint-tokens.mjs && playwright test",
     "vectors": "node scripts/daykeep-vectors.mjs",
     "check:ux": "playwright test",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "icons": "node scripts/icons.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",
@@ -32,6 +33,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
+    "vite-plugin-pwa": "2.0.0",
     "vitest": "^3.2.7"
   }
 }
