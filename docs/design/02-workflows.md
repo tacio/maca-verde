@@ -77,7 +77,7 @@ Every current feature, mapped to the new design.
 | Custom routine builder | **Keep, move** | Plan → Routines (secondary) |
 | Workout HUD | **Rebuild** | P12: current exercise, bare seconds, progress strip; Pause only — no skipping (day 14359) |
 | HUD sound / voice toggles, skip-back | **Move / cut** | Toggles to Settings; skip and skip-back cut |
-| Post-workout modal (RPE, neck, rope, hang, notes) | **Rebuild** | Log screen pre-filled from the timer; asks only for what targets need + RPE + neck (P11) |
+| Post-workout modal (RPE, neck, rope, hang, notes) | **Rebuild** | Log screen pre-filled from the timer; asks only for what targets need + RPE + neck (P11). Ratings are tap strips (0–1, 2 decimals), unset until tapped: no preselected value to anchor the answer |
 | Drill offer after workout ("pulse is high") | **Keep** | Shown only if a drill is still due today — pairs the methodology's elevated-HR drill with the workout |
 | Auto Drive backup after workout | **Keep** | Silent; status in Settings |
 | Mood modal (valence, energy, HALT, somatic, speaking rating, notes) | **Rebuild** | Default path: valence + HALT + save (≤ 3 taps). Energy, tension, speaking rating, notes behind "More" and stored only if touched |
@@ -216,8 +216,10 @@ Entry: a card on Today from 3 days before the next cycle starts, and Plan → "N
 ┌───────────────────────────────────┐
 │ Tabata done · 12 min · 2/2 rounds │
 ├───────────────────────────────────┤
-│ Effort (RPE)   1 … ⑦ … 10         │
-│ Neck tension   ⓪ … ② … 10         │
+│ Effort (RPE)               .80    │
+│ [░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|▓▓▓]       │  ← tap anywhere: 0–1
+│ Neck tension               .15    │
+│ [░░░|▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓]       │
 │ Rope turns     [ 360 ]  target 350│  ← only if a target needs it
 ├───────────────────────────────────┤
 │ [            Save              ]  │

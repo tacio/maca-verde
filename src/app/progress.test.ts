@@ -4,6 +4,7 @@ import { dayStartUnix } from '../domain/plan';
 import { buildFixture } from '../dev/fixtures';
 import type { MoodCheck, WorkoutSession } from '../domain/types';
 import { DEFAULT_CONFIG } from '../time/daykeep';
+import { formatUnit } from '../ui/unit';
 import { dayDetail, historyRows, moodTrend, neckTrend, trendAverage, trendDays, trendLabel, valenceWord } from './progress';
 import { isCleanCycle, lastHundredGrid } from './view';
 
@@ -35,7 +36,7 @@ describe('clean cycles', () => {
 describe('trends', () => {
   const session = (id: string, day: number, neck: number): WorkoutSession => ({
     id, routineId: 'x', startUnix: at(day, 0.4) - 600, endUnix: at(day, 0.4), completedFull: true,
-    totalSeconds: 600, roundsCompleted: 1, totalRounds: 1, rpe: 7, neck, estimatedCalories: 0,
+    totalSeconds: 600, roundsCompleted: 1, totalRounds: 1, rpe: 0.7, neck, estimatedCalories: 0,
   });
   const moodOn = (id: string, day: number, valence: MoodCheck['valence']): MoodCheck => ({
     id, unix: at(day, 0.3), valence, halt: { hungry: false, angry: false, lonely: false, tired: false },
@@ -46,12 +47,12 @@ describe('trends', () => {
   });
 
   it('averages neck tension per day and leaves empty days null', () => {
-    const t = neckTrend([session('a', 100, 2), session('b', 100, 3), session('c', 95, 5), session('d', 90, 9)], 100, cfg);
+    const t = neckTrend([session('a', 100, 0.2), session('b', 100, 0.35), session('c', 95, 0.5), session('d', 90, 0.9)], 100, cfg);
     expect(t).toHaveLength(10);
-    expect(t[9]).toEqual({ day: 100, value: 2.5 });
-    expect(t[4]).toEqual({ day: 95, value: 5 });
+    expect(t[9]).toEqual({ day: 100, value: 0.28 });
+    expect(t[4]).toEqual({ day: 95, value: 0.5 });
     expect(t.filter((p) => p.value === null)).toHaveLength(8); // day 90 is outside the window
-    expect(trendAverage(t)).toBe(3.8);
+    expect(trendAverage(t, 2)).toBe(0.39);
   });
 
   it('scores mood valence, unpleasant moods alike', () => {
@@ -63,8 +64,8 @@ describe('trends', () => {
   });
 
   it('has a text alternative naming each day', () => {
-    const t = neckTrend([session('a', 14355, 2)], 14355, cfg, 2);
-    expect(trendLabel('Neck tension', t)).toBe('Neck tension, last 2 days: 354 none, 355 2');
+    const t = neckTrend([session('a', 14355, 0.2)], 14355, cfg, 2);
+    expect(trendLabel('Neck tension', t, formatUnit)).toBe('Neck tension, last 2 days: 354 none, 355 .20');
   });
 });
 

@@ -2,14 +2,15 @@
  * Post-workout log (J4, P11): what the timer measured, the few inputs the
  * log asks for, and the WorkoutSession it saves. Pure; unit-tested.
  *
- * Inputs: RPE and neck tension always (sensible defaults, so Save alone is
- * enough), rope turns / hang seconds only when the plan item targets them,
- * pre-filled from the timer.
+ * Inputs: effort (RPE) and neck tension always, as 0–1 tap-scale ratings
+ * with no preselected value (a default would anchor the answer), rope turns /
+ * hang seconds only when the plan item targets them, pre-filled from the timer.
  */
 
 import type { DayConfig } from '../time/daykeep';
 import { formatSeconds } from '../time/seconds';
 import { personalRecords } from '../domain/engine';
+import { toUnit } from '../ui/unit';
 import type { WorkoutItem, WorkoutRoutine, WorkoutSession } from '../domain/types';
 import { buildPhases, end, estimateRopeTurns, startRun, summarize, tick, type RunSummary } from './phases';
 
@@ -51,22 +52,21 @@ export function logFields(item: WorkoutItem): LogField[] {
 
 export const LOG_FIELD_LABEL: Record<LogField, string> = { ropeTurns: 'Rope turns', hangSeconds: 'Dead hang (s)' };
 
-export const DEFAULT_RPE = 7;
-export const DEFAULT_NECK = 2;
-
 export interface LogDraft {
-  rpe: number;
-  neck: number;
+  /** 0–1, null until tapped. */
+  rpe: number | null;
+  /** 0–1, null until tapped. */
+  neck: number | null;
   /** As typed; only the item's fields are present. */
   fields: Partial<Record<LogField, string>>;
 }
 
-/** Defaults and timer estimates. */
+/** Empty ratings and timer estimates. */
 export function initialDraft(result: WorkoutResult, item: WorkoutItem): LogDraft {
   const fields: LogDraft['fields'] = {};
   for (const f of logFields(item))
     fields[f] = String(f === 'ropeTurns' ? estimateRopeTurns(result.ropeSeconds) : result.longestHangSeconds);
-  return { rpe: DEFAULT_RPE, neck: DEFAULT_NECK, fields };
+  return { rpe: null, neck: null, fields };
 }
 
 /** A whole number ≥ 0 as typed, or null. */
@@ -77,14 +77,12 @@ export function parseCount(text: string | undefined): number | null {
 }
 
 export function draftValid(d: LogDraft): boolean {
-  return Object.values(d.fields).every((v) => parseCount(v) !== null);
+  return d.rpe !== null && d.neck !== null && Object.values(d.fields).every((v) => parseCount(v) !== null);
 }
-
-const clampInt = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
 
 /** The session to store, or null while a field is invalid. */
 export function buildSession(result: WorkoutResult, draft: LogDraft, id: string): WorkoutSession | null {
-  if (!draftValid(draft)) return null;
+  if (!draftValid(draft) || draft.rpe === null || draft.neck === null) return null;
   const s: WorkoutSession = {
     id,
     routineId: result.routineId,
@@ -94,8 +92,8 @@ export function buildSession(result: WorkoutResult, draft: LogDraft, id: string)
     totalSeconds: result.activeSeconds,
     roundsCompleted: result.roundsCompleted,
     totalRounds: result.totalRounds,
-    rpe: clampInt(draft.rpe, 1, 10),
-    neck: clampInt(draft.neck, 0, 10),
+    rpe: toUnit(draft.rpe),
+    neck: toUnit(draft.neck),
     estimatedCalories: result.estimatedCalories,
   };
   const rope = parseCount(draft.fields.ropeTurns);

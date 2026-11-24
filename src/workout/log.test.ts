@@ -5,8 +5,6 @@ import type { WorkoutItem, WorkoutSession } from '../domain/types';
 import { sessionSatisfies } from '../domain/record';
 import { DEFAULT_CONFIG } from '../time/daykeep';
 import {
-  DEFAULT_NECK,
-  DEFAULT_RPE,
   buildSession,
   fieldHint,
   initialDraft,
@@ -48,7 +46,7 @@ describe('log fields', () => {
   });
 
   it('pre-fills from the timer: 2.2 turns per rope second, the longest hang', () => {
-    expect(initialDraft(result(), rope)).toEqual({ rpe: DEFAULT_RPE, neck: DEFAULT_NECK, fields: { ropeTurns: '220' } });
+    expect(initialDraft(result(), rope)).toEqual({ rpe: null, neck: null, fields: { ropeTurns: '220' } });
     expect(initialDraft(result(), { ...rope, routineId: POSTURE_ROUTINE_ID, targets: { hangSeconds: 30 } }).fields).toEqual({ hangSeconds: '20' });
   });
 
@@ -61,7 +59,7 @@ describe('log fields', () => {
 
 describe('buildSession', () => {
   it('builds the session from the timer and the inputs', () => {
-    const s = buildSession(result({ itemId: rope.id, routineId: ROPE_ROUTINE_ID }), { rpe: 8, neck: 1, fields: { ropeTurns: '360' } }, 's1');
+    const s = buildSession(result({ itemId: rope.id, routineId: ROPE_ROUTINE_ID }), { rpe: 0.8, neck: 0.1, fields: { ropeTurns: '360' } }, 's1');
     expect(s).toEqual({
       id: 's1',
       routineId: ROPE_ROUTINE_ID,
@@ -72,28 +70,31 @@ describe('buildSession', () => {
       roundsCompleted: 2,
       totalRounds: 2,
       ropeTurns: 360,
-      rpe: 8,
-      neck: 1,
+      rpe: 0.8,
+      neck: 0.1,
       estimatedCalories: 150,
     });
     expect(sessionSatisfies(s!, { ...rope, targets: { ropeTurns: 350 } })).toBe(true);
   });
 
   it('leaves out fields the item does not ask for, and refuses invalid input', () => {
-    const s = buildSession(result(), { rpe: 7, neck: 2, fields: {} }, 's');
+    const s = buildSession(result(), { rpe: 0.7, neck: 0.2, fields: {} }, 's');
     expect(s).not.toHaveProperty('ropeTurns');
     expect(s).not.toHaveProperty('hangSeconds');
-    expect(buildSession(result(), { rpe: 7, neck: 2, fields: { ropeTurns: 'x' } }, 's')).toBeNull();
+    expect(buildSession(result(), { rpe: 0.7, neck: 0.2, fields: { ropeTurns: 'x' } }, 's')).toBeNull();
   });
 
   it('an early session keeps its real numbers and never satisfies the item', () => {
-    const s = buildSession(result({ completedFull: false, shortBy: 'ended', roundsCompleted: 1, activeSeconds: 300 }), { rpe: 7, neck: 2, fields: {} }, 's')!;
+    const s = buildSession(result({ completedFull: false, shortBy: 'ended', roundsCompleted: 1, activeSeconds: 300 }), { rpe: 0.7, neck: 0.2, fields: {} }, 's')!;
     expect(s).toMatchObject({ completedFull: false, roundsCompleted: 1, totalSeconds: 300 });
     expect(sessionSatisfies(s, { ...tabata, targets: {} })).toBe(false);
   });
 
   it('clamps the scales', () => {
-    expect(buildSession(result(), { rpe: 12, neck: -3, fields: {} }, 's')).toMatchObject({ rpe: 10, neck: 0 });
+    expect(buildSession(result(), { rpe: 1.2, neck: -0.3, fields: {} }, 's')).toMatchObject({ rpe: 1, neck: 0 });
+    expect(buildSession(result(), { rpe: 0.733, neck: 0.2, fields: {} }, 's')).toMatchObject({ rpe: 0.73 });
+    expect(buildSession(result(), { rpe: null, neck: 0.2, fields: {} }, 's'), 'effort must be tapped').toBeNull();
+    expect(buildSession(result(), { rpe: 0.5, neck: null, fields: {} }, 's'), 'neck must be tapped').toBeNull();
   });
 });
 
@@ -130,9 +131,9 @@ describe('simulatedResult (dev scenarios)', () => {
 describe('records beaten (inline badge)', () => {
   const past = (over: Partial<WorkoutSession>): WorkoutSession => ({
     id: 'p', routineId: ROPE_ROUTINE_ID, startUnix: 0, endUnix: 600, completedFull: true, totalSeconds: 600,
-    roundsCompleted: 2, totalRounds: 2, rpe: 7, neck: 2, estimatedCalories: 100, ...over,
+    roundsCompleted: 2, totalRounds: 2, rpe: 0.7, neck: 0.2, estimatedCalories: 100, ...over,
   });
-  const draft = (fields: Record<string, string>) => ({ rpe: 7, neck: 2, fields });
+  const draft = (fields: Record<string, string>) => ({ rpe: 0.7, neck: 0.2, fields });
 
   it('flags only values above an existing record', () => {
     const history = [past({ ropeTurns: 300, hangSeconds: 40 })];

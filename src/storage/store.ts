@@ -94,6 +94,8 @@ export function emptyData(): AppData {
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+/** A 0–1 tap-scale rating. */
+const isUnit = (v: unknown): v is number => isNum(v) && v >= 0 && v <= 1;
 const isInt = (v: unknown): v is number => isNum(v) && Number.isInteger(v);
 const isStr = (v: unknown): v is string => typeof v === 'string';
 const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
@@ -142,8 +144,8 @@ export function isWorkoutSession(v: unknown): v is WorkoutSession {
     isNum(v.totalRounds) &&
     optNum(v.hangSeconds) &&
     optNum(v.ropeTurns) &&
-    isNum(v.rpe) &&
-    isNum(v.neck) &&
+    isUnit(v.rpe) &&
+    isUnit(v.neck) &&
     isNum(v.estimatedCalories)
   );
 }

@@ -5,7 +5,7 @@ import { requestAutoBackup } from '../../storage/autoBackup';
 import { nowUnix } from '../../time/clock';
 import { Button } from '../../ui/Button';
 import { FullScreen } from '../../ui/FullScreen';
-import { Scale } from '../../ui/Scale';
+import { TapScale } from '../../ui/TapScale';
 import { Sheet } from '../../ui/Sheet';
 import { inputClass } from '../../ui/TextField';
 import { cx } from '../../ui/cx';
@@ -54,8 +54,8 @@ export function WorkoutLogScreen({ itemId, simulate }: { itemId: string; simulat
 }
 
 /**
- * Post-workout log (J4, P11): time and rounds come from the timer; RPE and
- * neck have defaults, so Save alone logs it. Rope turns / hang seconds only
+ * Post-workout log (J4, P11): time and rounds come from the timer; effort and
+ * neck are one tap each on a 0–1 strip, unset until tapped (no anchoring). Rope turns / hang seconds only
  * when the item targets them, pre-filled from the timer. If a pause drill is
  * still due today, a quiet link saves and goes straight to it (from Freeze).
  */
@@ -118,23 +118,17 @@ function WorkoutLog({ item, result }: { item: WorkoutItem; result: WorkoutResult
             {result.roundsCompleted} rounds — your most yet
           </p>
         )}
-        <Scale
+        <TapScale
           label="Effort (RPE)"
-          min={1}
-          max={10}
-          columns={5}
-          low="easy"
-          high="all out"
+          low="nothing"
+          high="max"
           value={draft.rpe}
           onChange={(rpe) => setDraft((d) => ({ ...d, rpe }))}
         />
-        <Scale
+        <TapScale
           label="Neck tension"
-          min={0}
-          max={10}
-          columns={6}
           low="none"
-          high="severe"
+          high="worst"
           value={draft.neck}
           onChange={(neck) => setDraft((d) => ({ ...d, neck }))}
         />

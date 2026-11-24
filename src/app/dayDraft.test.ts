@@ -62,8 +62,8 @@ describe('targets', () => {
       totalSeconds: 600,
       roundsCompleted: 3,
       totalRounds: 3,
-      rpe: 7,
-      neck: 1,
+      rpe: 0.7,
+      neck: 0.1,
       estimatedCalories: 100,
       ...over,
     });

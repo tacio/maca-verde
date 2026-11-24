@@ -157,8 +157,8 @@ function addSession(data: AppData, day: number, item: WorkoutItem, endUnix: numb
     totalSeconds,
     roundsCompleted: rounds,
     totalRounds: rounds,
-    rpe: 7,
-    neck: 2,
+    rpe: 0.7,
+    neck: 0.2,
     estimatedCalories: r?.estimatedCalories ?? 100,
   };
   if (item.targets.hangSeconds !== undefined) s.hangSeconds = item.targets.hangSeconds + 3;
@@ -210,7 +210,7 @@ const HUNDRED =
 /** Varied neck scores and moods over the last 10 days, so the trends show a shape. */
 function varyTrends(data: AppData, f: Fixture): void {
   const today = Math.floor((f.now - f.config.epoch) / f.config.dayLength);
-  const neck = [4, 3, 3, 2, 3, 2, 1, 2, 1, 1];
+  const neck = [0.42, 0.35, 0.3, 0.24, 0.31, 0.2, 0.12, 0.18, 0.1, 0.08];
   const valences = ['frustrated', 'neutral', 'good', 'good', 'exhausted', 'good', 'great', 'good', 'great', 'good'] as const;
   for (const s of data.sessions) {
     const back = today - Math.floor((s.endUnix - f.config.epoch) / f.config.dayLength);
@@ -426,7 +426,7 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     screen: `workout:${TODAY}-0:paused`,
   },
   'workout-log': {
-    description: 'Post-workout log after a full Rope session: RPE, neck, rope turns (target), drill offer',
+    description: 'Post-workout log after a full Rope session: effort and neck strips (unset), rope turns (target), drill offer',
     fixture: { history: STANDARD, today: TODAY },
     screen: `workout-log:${TODAY}-0:full`,
   },

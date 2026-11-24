@@ -20,8 +20,8 @@ function session(routineId: string, endUnix: number, over: Partial<WorkoutSessio
     totalSeconds: 600,
     roundsCompleted: 3,
     totalRounds: 3,
-    rpe: 7,
-    neck: 2,
+    rpe: 0.7,
+    neck: 0.2,
     estimatedCalories: 100,
     ...over,
   };

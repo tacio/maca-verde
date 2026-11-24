@@ -173,9 +173,9 @@ export interface WorkoutSession {
   totalRounds: number;
   hangSeconds?: number;
   ropeTurns?: number;
-  /** 1–10 */
+  /** Effort, 0–1 (tap scale, 2 decimals). */
   rpe: number;
-  /** 0 (pain free) – 10 */
+  /** Neck tension, 0 (none) – 1 (worst), 2 decimals. */
   neck: number;
   estimatedCalories: number;
 }

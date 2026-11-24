@@ -30,14 +30,14 @@ function s(over: Partial<WorkoutSession> = {}): WorkoutSession {
     totalSeconds: 600,
     roundsCompleted: 2,
     totalRounds: 2,
-    rpe: 6,
-    neck: 3,
+    rpe: 0.6,
+    neck: 0.3,
     estimatedCalories: 200,
     ...over,
   };
 }
 
-/** The legacy App.handleSaveWorkoutLog fold, verbatim. */
+/** The legacy App.handleSaveWorkoutLog fold, verbatim (legacy RPE was 1–10). */
 function legacyFold(rpes: number[]) {
   let m = 1.0;
   let lvl = 1;
@@ -54,14 +54,14 @@ describe('multiplier and level match the legacy formulas', () => {
   it.each([[[]], [[5]], [[8]], [[7, 8, 9, 3]], [Array.from({ length: 30 }, (_, i) => (i % 3 ? 8 : 5))], [Array.from({ length: 60 }, () => 9)]])(
     'rpes %j',
     (rpes) => {
-      const sessions = rpes.map((rpe, i) => s({ rpe, endUnix: 5000 - i * 10 })).reverse();
+      const sessions = rpes.map((rpe, i) => s({ rpe: rpe / 10, endUnix: 5000 - i * 10 })).reverse();
       const legacy = legacyFold(rpes);
       expect(overloadMultiplier(sessions)).toBe(legacy.m);
       expect(level(sessions)).toBe(rpes.length ? legacy.lvl : 1);
     },
   );
   it('caps at 1.4 and level 10', () => {
-    const many = Array.from({ length: 100 }, (_, i) => s({ rpe: 9, endUnix: i }));
+    const many = Array.from({ length: 100 }, (_, i) => s({ rpe: 0.9, endUnix: i }));
     expect(overloadMultiplier(many)).toBe(1.4);
     expect(level(many)).toBe(10);
     expect(level(many.slice(0, 4))).toBe(1);
@@ -72,8 +72,8 @@ describe('multiplier and level match the legacy formulas', () => {
 describe('personal records', () => {
   it('max hang, max rope turns, max rounds, lowest neck', () => {
     expect(personalRecords([])).toEqual({ maxHangSeconds: 0, maxRopeTurns: 0, maxRounds: 0, lowestNeck: null });
-    const r = personalRecords([s({ hangSeconds: 40, neck: 4 }), s({ ropeTurns: 300, roundsCompleted: 3, neck: 1 }), s({ hangSeconds: 35, neck: 5 })]);
-    expect(r).toEqual({ maxHangSeconds: 40, maxRopeTurns: 300, maxRounds: 3, lowestNeck: 1 });
+    const r = personalRecords([s({ hangSeconds: 40, neck: 0.4 }), s({ ropeTurns: 300, roundsCompleted: 3, neck: 0.1 }), s({ hangSeconds: 35, neck: 0.5 })]);
+    expect(r).toEqual({ maxHangSeconds: 40, maxRopeTurns: 300, maxRounds: 3, lowestNeck: 0.1 });
   });
 });
 

@@ -1,4 +1,5 @@
 import { BadgeCheck, CalendarRange, History, Settings, Sprout } from 'lucide-react';
+import { formatUnit } from '../../ui/unit';
 import { personalRecords } from '../../domain/engine';
 import { RESERVE_CAP } from '../../domain/record';
 import { shortDay } from '../../time/daykeep';
@@ -78,7 +79,7 @@ export function ProgressScreen() {
   const rec = personalRecords(data.sessions);
   const neck = neckTrend(data.sessions, record.today, cfg);
   const mood = moodTrend(data.moods, record.today, cfg);
-  const neckAvg = trendAverage(neck);
+  const neckAvg = trendAverage(neck, 2);
   const moodAvg = trendAverage(mood);
 
   return (
@@ -164,7 +165,7 @@ export function ProgressScreen() {
         <h2 id="trends-title" className="text-base font-semibold text-ink">
           Last 10 days
         </h2>
-        <Trend name="Neck tension" points={neck} max={NECK_MAX} summary={neckAvg === null ? '—' : `${neckAvg} / 10`} />
+        <Trend name="Neck tension" points={neck} max={NECK_MAX} format={formatUnit} summary={neckAvg === null ? '—' : formatUnit(neckAvg)} />
         <Trend name="Mood" points={mood} max={VALENCE_MAX} summary={valenceWord(moodAvg)} />
       </section>
     </TabScreen>
@@ -181,11 +182,23 @@ function RecordCell({ label, value }: { label: string; value: string }) {
 }
 
 /** A 10-day bar row: one bar per day (height = value), a dot where nothing was logged. */
-function Trend({ name, points, max, summary }: { name: string; points: TrendPoint[]; max: number; summary: string }) {
+function Trend({
+  name,
+  points,
+  max,
+  summary,
+  format,
+}: {
+  name: string;
+  points: TrendPoint[];
+  max: number;
+  summary: string;
+  format?: (v: number) => string;
+}) {
   return (
     <div className="flex items-center gap-3">
       <span className="w-24 shrink-0 truncate text-sm text-ink">{name}</span>
-      <div role="img" aria-label={trendLabel(name, points)} className="flex h-8 flex-1 items-end gap-1">
+      <div role="img" aria-label={trendLabel(name, points, format)} className="flex h-8 flex-1 items-end gap-1">
         {points.map((p) => (
           <span key={p.day} className="flex h-full flex-1 items-end justify-center">
             {p.value === null ? (

@@ -8,6 +8,7 @@
 
 import { formatTimeOfDay, fromUnix, shortDay, type DayConfig } from '../time/daykeep';
 import { formatSeconds } from '../time/seconds';
+import { formatUnit } from '../ui/unit';
 import { dayAt } from '../domain/plan';
 import type { RecordSummary } from '../domain/record';
 import type { AppData, MoodCheck, ValenceType, WorkoutRoutine, WorkoutSession } from '../domain/types';
@@ -28,7 +29,7 @@ export const VALENCE_SCORE: Record<ValenceType, number> = {
   anxious: 1,
 };
 export const VALENCE_MAX = 4;
-export const NECK_MAX = 10;
+export const NECK_MAX = 1;
 
 export interface TrendPoint {
   day: number;
@@ -36,14 +37,18 @@ export interface TrendPoint {
   value: number | null;
 }
 
-const mean = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
+const mean = (xs: number[], decimals = 1) => {
+  if (!xs.length) return null;
+  const k = 10 ** decimals;
+  return Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * k) / k;
+};
 
 /** The last `n` days ending today, oldest first. */
 export function trendDays(today: number, n = TREND_DAYS): number[] {
   return Array.from({ length: n }, (_, i) => today - n + 1 + i);
 }
 
-function trend<T>(xs: T[], dayOf: (x: T) => number, valueOf: (x: T) => number, today: number, n: number): TrendPoint[] {
+function trend<T>(xs: T[], dayOf: (x: T) => number, valueOf: (x: T) => number, today: number, n: number, decimals = 1): TrendPoint[] {
   const byDay = new Map<number, number[]>();
   for (const x of xs) {
     const d = dayOf(x);
@@ -52,12 +57,12 @@ function trend<T>(xs: T[], dayOf: (x: T) => number, valueOf: (x: T) => number, t
     if (list) list.push(valueOf(x));
     else byDay.set(d, [valueOf(x)]);
   }
-  return trendDays(today, n).map((day) => ({ day, value: mean(byDay.get(day) ?? []) }));
+  return trendDays(today, n).map((day) => ({ day, value: mean(byDay.get(day) ?? [], decimals) }));
 }
 
-/** Neck tension (0 = pain free … 10) logged after workouts, per day. */
+/** Neck tension (0 = none … 1 = worst) logged after workouts, per day, 2 decimals. */
 export function neckTrend(sessions: WorkoutSession[], today: number, cfg: DayConfig, n = TREND_DAYS): TrendPoint[] {
-  return trend(sessions, (s) => dayAt(s.endUnix, cfg), (s) => s.neck, today, n);
+  return trend(sessions, (s) => dayAt(s.endUnix, cfg), (s) => s.neck, today, n, 2);
 }
 
 /** Mood valence (VALENCE_SCORE, 1 … 4) of the day's checks. */
@@ -66,13 +71,13 @@ export function moodTrend(moods: MoodCheck[], today: number, cfg: DayConfig, n =
 }
 
 /** Mean over the days that have a value, or null. */
-export function trendAverage(points: TrendPoint[]): number | null {
-  return mean(points.flatMap((p) => (p.value === null ? [] : [p.value])));
+export function trendAverage(points: TrendPoint[], decimals = 1): number | null {
+  return mean(points.flatMap((p) => (p.value === null ? [] : [p.value])), decimals);
 }
 
 /** Text alternative for a trend row: "Neck tension, last 10 days: 346 2, 347 none, …". */
-export function trendLabel(name: string, points: TrendPoint[]): string {
-  const parts = points.map((p) => `${shortDay(p.day, 3)} ${p.value === null ? 'none' : p.value}`);
+export function trendLabel(name: string, points: TrendPoint[], format: (v: number) => string = String): string {
+  const parts = points.map((p) => `${shortDay(p.day, 3)} ${p.value === null ? 'none' : format(p.value)}`);
   return `${name}, last ${points.length} days: ${parts.join(', ')}`;
 }
 
@@ -164,7 +169,7 @@ export function dayDetail(day: number, data: AppData, record: RecordSummary, cfg
       const parts = [at(s.endUnix), `${s.roundsCompleted}/${s.totalRounds} rounds`];
       if (s.hangSeconds !== undefined) parts.push(`hang ${formatSeconds(s.hangSeconds)}`);
       if (s.ropeTurns !== undefined) parts.push(`${s.ropeTurns} turns`);
-      parts.push(`RPE ${s.rpe}`, `neck ${s.neck}`);
+      parts.push(`effort ${formatUnit(s.rpe)}`, `neck ${formatUnit(s.neck)}`);
       const title = `${routineName(s.routineId, custom)} · ${formatSeconds(s.totalSeconds)}${s.completedFull ? '' : ' · ended early'}`;
       return { id: s.id, title, meta: parts.join(' · ') };
     });

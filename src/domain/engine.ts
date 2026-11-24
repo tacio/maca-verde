@@ -3,7 +3,7 @@
  * Methodology preserved from src/services/overloadEngine.ts and
  * App.handleSaveWorkoutLog (legacy):
  *
- * - multiplier: 1.0, +0.01 per logged session (+0.02 when RPE ≥ 8), cap 1.4,
+ * - multiplier: 1.0, +0.01 per logged session (+0.02 when RPE ≥ .80), cap 1.4,
  *   rounded to 2 decimals at each step (legacy `toFixed(2)`).
  * - level: min(10, floor(sessions / 5) + 1).
  * - personal records: max hang, max rope turns, max rounds, lowest neck score.
@@ -59,9 +59,9 @@ export function personalRecords(sessions: WorkoutSession[]): PersonalRecords {
   return r;
 }
 
-/** Legacy step: min(1.4, m + (rpe ≥ 8 ? 0.02 : 0.01)), rounded to 2 decimals. */
+/** Legacy step (legacy RPE 8 of 10 = .80): min(1.4, m + (rpe ≥ .8 ? 0.02 : 0.01)), rounded to 2 decimals. */
 export function nextMultiplier(m: number, rpe: number): number {
-  return Number(Math.min(1.4, m + (rpe >= 8 ? 0.02 : 0.01)).toFixed(2));
+  return Number(Math.min(1.4, m + (rpe >= 0.8 ? 0.02 : 0.01)).toFixed(2));
 }
 
 export function overloadMultiplier(sessions: WorkoutSession[]): number {

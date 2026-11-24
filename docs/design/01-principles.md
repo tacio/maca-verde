@@ -74,7 +74,7 @@ The home screen is today's plan as a short checklist with one completion indicat
 
 ### P11 — Logging under 15 seconds
 - **Evidence.** Tracking burden ("a hassle") is a leading reason people abandon self-tracking (Epstein et al. 2015, 2016) ●●○. Compliance in experience-sampling studies averages 79% and stays similar from 3 to 12 prompts/day when each is short (Wrzus & Neubauer 2023) ●●●.
-- **Apply.** Mood check: one screen, default path ≤ 3 taps (valence, HALT chips, save); free text optional. Post-workout log pre-filled from the timer; only RPE and neck score need input.
+- **Apply.** Mood check: one screen, default path ≤ 3 taps (valence, HALT chips, save); free text optional. Post-workout log pre-filled from the timer; only RPE and neck need input: one tap each on a 0–1 strip, never preselected (a default anchors the answer).
 - **Check.** Default mood-check path ≤ 3 taps; post-workout log ≤ 3 required inputs.
 
 ### P12 — Audio first, glance second, hands free during workouts
