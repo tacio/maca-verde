@@ -50,7 +50,7 @@ export function TapScale({ label, value, onChange, low, high }: TapScaleProps) {
       <div className="flex items-baseline justify-between">
         <span className="text-base font-medium text-ink">{label}</span>
         <span className={cx('text-base tabular-nums', value === null ? 'text-sm text-ink-muted' : 'font-semibold text-ink')}>
-          {value === null ? 'Tap or slide' : formatUnit(value)}
+          {value === null ? 'Tap' : formatUnit(value)}
         </span>
       </div>
       <div
