@@ -77,10 +77,10 @@ Every current feature, mapped to the new design.
 | Custom routine builder | **Keep, move** | Plan → Routines (secondary) |
 | Workout HUD | **Rebuild** | P12: current exercise, bare seconds, progress strip; Pause only — no skipping (day 14359) |
 | HUD sound / voice toggles, skip-back | **Move / cut** | Toggles to Settings; skip and skip-back cut |
-| Post-workout modal (RPE, neck, rope, hang, notes) | **Rebuild** | Log screen pre-filled from the timer; asks only for what targets need + RPE + neck (P11). Ratings are tap strips (0–1, 2 decimals), unset until tapped: no preselected value to anchor the answer |
+| Post-workout modal (RPE, neck, rope, hang, notes) | **Rebuild** | Log screen pre-filled from the timer; asks only for what targets need + RPE + neck (P11). Ratings are tap strips (tap or slide, 0–1, 2 decimals), unset until touched: no preselected value to anchor the answer |
 | Drill offer after workout ("pulse is high") | **Keep** | Shown only if a drill is still due today — pairs the methodology's elevated-HR drill with the workout |
 | Auto Drive backup after workout | **Keep** | Silent; status in Settings |
-| Mood modal (valence, energy, HALT, somatic, speaking rating, notes) | **Rebuild** | Default path: valence + HALT + save (≤ 3 taps). Energy, tension, speaking rating, notes behind "More" and stored only if touched |
+| Mood modal (valence, energy, HALT, somatic, speaking rating, notes) | **Rebuild** | Default path: valence + HALT + save (≤ 3 taps). Energy, tension, speaking rating, notes behind "More" and stored only if touched; energy and speaking use the same tap strips as the log |
 | HALT radar / header "shield" | **Simplify** | One line on Today when the latest check flags HALT, with a drill shortcut |
 | Think-before-speak drill (elevate → freeze → sigh → scenario) | **Keep, restyle** | Same four steps, full-screen, voice-guided; skips "elevate" when started right after a workout |
 | Mind & Emotional Control tab | **Dissolve** | Actions → Today items; history → Progress; science → "Why?" (P10) |

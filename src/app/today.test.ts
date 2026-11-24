@@ -117,8 +117,8 @@ describe('buildMoodCheck', () => {
   });
 
   it('keeps touched optional fields and drops empty ones', () => {
-    const m = buildMoodCheck({ valence: 'anxious', halt: [], energy: 2, tension: ['jaw'], speakingRating: 4, notes: '  call went well ' }, 'x', 1);
-    expect(m).toMatchObject({ energy: 2, tension: ['jaw'], speakingRating: 4, notes: 'call went well' });
+    const m = buildMoodCheck({ valence: 'anxious', halt: [], energy: 0.333, tension: ['jaw'], speakingRating: 0.8, notes: '  call went well ' }, 'x', 1);
+    expect(m).toMatchObject({ energy: 0.33, tension: ['jaw'], speakingRating: 0.8, notes: 'call went well' });
     const empty = buildMoodCheck({ valence: 'anxious', halt: [], tension: [], notes: '   ' }, 'x', 1)!;
     expect('tension' in empty || 'notes' in empty).toBe(false);
   });

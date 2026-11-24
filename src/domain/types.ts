@@ -196,9 +196,11 @@ export interface MoodCheck {
   unix: number;
   valence: ValenceType;
   halt: HALTState;
-  energy?: 1 | 2 | 3 | 4 | 5;
+  /** 0 (drained) – 1 (charged), 2 decimals. */
+  energy?: number;
   tension?: SomaticTensionArea[];
-  speakingRating?: 1 | 2 | 3 | 4 | 5;
+  /** 0 (rarely) – 1 (every time) paused before speaking, 2 decimals. */
+  speakingRating?: number;
   notes?: string;
 }
 

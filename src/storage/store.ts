@@ -102,7 +102,6 @@ const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
 const optNum = (v: unknown) => v === undefined || isNum(v);
 const optStr = (v: unknown) => v === undefined || isStr(v);
 const VALENCES = ['great', 'good', 'neutral', 'frustrated', 'exhausted', 'anxious'];
-const ONE_TO_FIVE = (v: unknown) => v === undefined || (isInt(v) && v >= 1 && v <= 5);
 
 export function isDayConfig(v: unknown): v is DayConfig {
   return isObj(v) && isInt(v.epoch) && isNum(v.dayLength) && isValidDayLength(v.dayLength);
@@ -167,8 +166,8 @@ export function isMoodCheck(v: unknown): v is MoodCheck {
   const h = v.halt;
   if (!isObj(h) || !isBool(h.hungry) || !isBool(h.angry) || !isBool(h.lonely) || !isBool(h.tired)) return false;
   return (
-    ONE_TO_FIVE(v.energy) &&
-    ONE_TO_FIVE(v.speakingRating) &&
+    (v.energy === undefined || isUnit(v.energy)) &&
+    (v.speakingRating === undefined || isUnit(v.speakingRating)) &&
     (v.tension === undefined || (Array.isArray(v.tension) && v.tension.every(isStr))) &&
     optStr(v.notes)
   );

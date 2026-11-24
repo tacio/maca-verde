@@ -4,6 +4,7 @@
  * No React here (unit-tested in today.test.ts).
  */
 
+import { toUnit } from '../ui/unit';
 import { cycleOf, type DayConfig } from '../time/daykeep';
 import { formatSeconds } from '../time/seconds';
 import { routineSeconds } from '../workout/phases';
@@ -159,15 +160,15 @@ export const TENSION_OPTIONS: { value: SomaticTensionArea; label: string }[] = [
   { value: 'hands', label: 'Hands' },
 ];
 
-export type OneToFive = 1 | 2 | 3 | 4 | 5;
-
 /** The mood check being filled in. Optional fields stay undefined until touched. */
 export interface MoodDraft {
   valence: ValenceType | null;
   halt: (keyof HALTState)[];
-  energy?: OneToFive;
+  /** 0–1 tap-scale rating. */
+  energy?: number;
   tension?: SomaticTensionArea[];
-  speakingRating?: OneToFive;
+  /** 0–1 tap-scale rating. */
+  speakingRating?: number;
   notes?: string;
 }
 
@@ -182,9 +183,9 @@ export function buildMoodCheck(d: MoodDraft, id: string, unix: number): MoodChec
     valence: d.valence,
     halt: { hungry: d.halt.includes('hungry'), angry: d.halt.includes('angry'), lonely: d.halt.includes('lonely'), tired: d.halt.includes('tired') },
   };
-  if (d.energy !== undefined) m.energy = d.energy;
+  if (d.energy !== undefined) m.energy = toUnit(d.energy);
   if (d.tension?.length) m.tension = [...d.tension];
-  if (d.speakingRating !== undefined) m.speakingRating = d.speakingRating;
+  if (d.speakingRating !== undefined) m.speakingRating = toUnit(d.speakingRating);
   const notes = d.notes?.trim();
   if (notes) m.notes = notes;
   return m;

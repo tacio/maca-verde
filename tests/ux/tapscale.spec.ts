@@ -38,3 +38,40 @@ test('effort and neck start unset; a tap sets the value by position', async ({ p
   await expect(page.locator('[data-tap-marker]')).toHaveCount(2);
   await expect(save).toBeEnabled();
 });
+
+test('sliding moves the marker with the finger', async ({ page, context, baseURL }) => {
+  await blockExternal(context, new URL(baseURL!).origin);
+  await page.goto(scenarioUrl('workout-log', SCENARIOS['workout-log'].screen));
+  await settle(page);
+
+  const effort = page.getByRole('slider', { name: 'Effort (RPE)' });
+  const b = (await effort.boundingBox())!;
+  const y = b.y + b.height / 2;
+  await page.mouse.move(b.x + b.width * 0.2, y);
+  await page.mouse.down();
+  expect(Number(await effort.getAttribute('aria-valuenow'))).toBeCloseTo(0.2, 1);
+  await page.mouse.move(b.x + b.width * 0.6, y, { steps: 5 });
+  expect(Number(await effort.getAttribute('aria-valuenow')), 'follows the drag').toBeCloseTo(0.6, 1);
+  await page.mouse.move(b.x + b.width * 1.5, y, { steps: 3 });
+  expect(Number(await effort.getAttribute('aria-valuenow')), 'clamps past the end').toBe(1);
+  await page.mouse.up();
+  await page.mouse.move(b.x + b.width * 0.1, y);
+  expect(Number(await effort.getAttribute('aria-valuenow')), 'stops after release').toBe(1);
+});
+
+test('mood energy and speaking are optional strips', async ({ page, context, baseURL }) => {
+  await blockExternal(context, new URL(baseURL!).origin);
+  await page.goto(scenarioUrl('mood-more', SCENARIOS['mood-more'].screen));
+  await settle(page);
+
+  const energy = page.getByRole('slider', { name: 'Energy' });
+  const speaking = page.getByRole('slider', { name: 'Paused before speaking' });
+  await expect(energy).not.toHaveAttribute('aria-valuenow');
+  await expect(speaking).not.toHaveAttribute('aria-valuenow');
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await expect(page.getByRole('button', { name: 'Save' }), 'ratings are optional').toBeEnabled();
+
+  const b = (await energy.boundingBox())!;
+  await energy.click({ position: { x: b.width * 0.4, y: b.height / 2 } });
+  expect(Number(await energy.getAttribute('aria-valuenow'))).toBeCloseTo(0.4, 1);
+});
