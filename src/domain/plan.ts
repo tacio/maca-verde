@@ -1,8 +1,8 @@
 /**
  * Plan rules (docs/design/00-brief.md → The plan; 02-workflows.md §3).
  *
- * - A day plan is never empty; ≤ 1 mood item and ≤ 1 drill item; counts ≥ 1;
- *   every target is a positive integer.
+ * - A day plan is never empty; ≤ 1 mood item, ≤ 1 drill item and ≤ 1 lesson
+ *   (P14); counts ≥ 1; every target is a positive integer.
  * - Day N's plan is editable until N.0000 and locked for the whole of day N
  *   (no function here modifies the plan of a started day).
  * - Cycle c covers days 10c..10c+9 and must be explicitly approved. An
@@ -12,6 +12,7 @@
  */
 
 import { cycleOf, dayOf, dayStart, fromUnix, type DayConfig } from '../time/daykeep';
+import { LESSONS } from '../data/lessons';
 import {
   TARGET_METRICS,
   type CycleApproval,
@@ -53,7 +54,9 @@ export type PlanProblem =
   | 'bad_target'
   | 'bad_duration'
   | 'bad_routine'
-  | 'bad_rest_kind';
+  | 'bad_rest_kind'
+  | 'duplicate_learn'
+  | 'bad_skill';
 
 function isPositiveInt(n: unknown): boolean {
   return typeof n === 'number' && Number.isInteger(n) && n >= 1;
@@ -66,6 +69,7 @@ export function validatePlanItems(items: PlanItem[]): PlanProblem[] {
   const ids = new Set<string>();
   let moods = 0;
   let drills = 0;
+  let lessons = 0;
   for (const item of items) {
     if (ids.has(item.id)) problems.add('duplicate_id');
     ids.add(item.id);
@@ -90,10 +94,15 @@ export function validatePlanItems(items: PlanItem[]): PlanProblem[] {
         drills++;
         if (!isPositiveInt(item.count)) problems.add('bad_count');
         break;
+      case 'learn':
+        lessons++;
+        if (!LESSONS[item.skillId]) problems.add('bad_skill');
+        break;
     }
   }
   if (moods > 1) problems.add('duplicate_mood');
   if (drills > 1) problems.add('duplicate_drill');
+  if (lessons > 1) problems.add('duplicate_learn');
   return [...problems];
 }
 
@@ -250,24 +259,30 @@ export function templateFromPlans(cycle: number, plans: DayPlan[]): Template {
 /**
  * Pre-fill the cycle's unstarted days for the approval editor (J2). Existing
  * plans are kept; otherwise the template slot is used if it's a valid plan;
- * otherwise `suggest(day)`. Returns the plans of the cycle's unstarted days.
+ * otherwise `suggest(day, earlier)`, where `earlier` holds the drafts of the
+ * cycle's days before it (so a curriculum advances one lesson per day, P14).
+ * Returns the plans of the cycle's unstarted days, in day order.
  * The template never counts as a plan by itself: the caller saves and approves.
  */
 export function prefillCycle(
   cycle: number,
   template: Template,
   plans: DayPlan[],
-  suggest: (day: number) => PlanItem[],
+  suggest: (day: number, earlier: DayPlan[]) => PlanItem[],
   now: number,
   cfg: DayConfig,
 ): DayPlan[] {
-  return cycleDays(cycle)
-    .filter((d) => canEditDay(d, now, cfg))
-    .map((d) => {
-      const existing = findPlan(plans, d);
-      if (existing) return existing;
-      const slot = template[slotOf(d)] ?? [];
-      const items = validatePlanItems(slot).length === 0 ? withIds(d, slot) : withIds(d, suggest(d));
-      return { day: d, items, updatedUnix: now };
-    });
+  const drafts: DayPlan[] = [];
+  for (const d of cycleDays(cycle)) {
+    if (!canEditDay(d, now, cfg)) continue;
+    const existing = findPlan(plans, d);
+    if (existing) {
+      drafts.push(existing);
+      continue;
+    }
+    const slot = template[slotOf(d)] ?? [];
+    const items = validatePlanItems(slot).length === 0 ? withIds(d, slot) : withIds(d, suggest(d, [...drafts]));
+    drafts.push({ day: d, items, updatedUnix: now });
+  }
+  return drafts;
 }

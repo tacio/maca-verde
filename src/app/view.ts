@@ -9,6 +9,7 @@ import { findRoutine, POSTURE_ROUTINE_ID, ROPE_ROUTINE_ID, TABATA_ROUTINE_ID } f
 import { RESERVE_CAP, type ItemProgress, type RecordSummary } from '../domain/record';
 import type { PlanItem, WorkoutRoutine, WorkoutTargets } from '../domain/types';
 import type { GlyphStatus } from '../ui/StatusGlyph';
+import { exerciseName } from '../workout/exerciseCues';
 
 /* --- plan items ---------------------------------------------------------- */
 
@@ -50,6 +51,8 @@ export function itemText(item: PlanItem, cfg: DayConfig, custom: WorkoutRoutine[
       return item.count === 1 ? 'Mood check' : `${item.count} mood checks`;
     case 'drill':
       return item.count === 1 ? 'Pause drill' : `${item.count} pause drills`;
+    case 'learn':
+      return `Learn · ${exerciseName(item.skillId)}`;
   }
 }
 
@@ -63,9 +66,10 @@ export function progressText(p: ItemProgress, cfg: DayConfig, custom: WorkoutRou
   return itemText(item, cfg, custom);
 }
 
-/** The next item to do: the first undone workout, else the first undone item. */
+/** The next item to do: a due lesson (P14), else the first undone workout, else the first undone item. */
 export function nextItem(items: ItemProgress[]): ItemProgress | undefined {
-  return items.find((p) => !p.satisfied && p.item.kind === 'workout') ?? items.find((p) => !p.satisfied);
+  const undone = (kind: PlanItem['kind']) => items.find((p) => !p.satisfied && p.item.kind === kind);
+  return undone('learn') ?? undone('workout') ?? items.find((p) => !p.satisfied);
 }
 
 /** Primary action label for an item: "Start Tabata", "Log a mood check"… */
@@ -79,12 +83,14 @@ export function actionText(item: PlanItem, custom: WorkoutRoutine[] = []): strin
       return 'Check in';
     case 'drill':
       return 'Start pause drill';
+    case 'learn':
+      return `Learn ${exerciseName(item.skillId)}`;
   }
 }
 
 /** A day plan in one line for lists: main items first, counts after. */
 export function daySummary(items: PlanItem[], cfg: DayConfig, custom: WorkoutRoutine[] = []): { title: string; meta: string } {
-  const main = items.filter((i) => i.kind === 'workout' || i.kind === 'rest').map((i) => itemText(i, cfg, custom));
+  const main = items.filter((i) => i.kind !== 'mood' && i.kind !== 'drill').map((i) => itemText(i, cfg, custom));
   const counts = items.filter((i) => i.kind === 'mood' || i.kind === 'drill').map((i) => itemText(i, cfg, custom).toLowerCase());
   if (main.length === 0) return { title: counts.join(' · ') || 'Nothing planned', meta: '' };
   return { title: main.join(' + '), meta: counts.join(' · ') };

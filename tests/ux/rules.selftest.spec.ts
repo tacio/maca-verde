@@ -84,6 +84,13 @@ const CASES: { rule: RuleName; bad: string; good: string }[] = [
       '<button data-primary>Save</button><button data-adjust-link>Adjust next days</button></main>',
   },
   {
+    rule: 'lesson-image',
+    bad: '<main data-screen="lesson"><p>Stand tall, eyes level.</p><button data-primary>Next</button></main>',
+    good:
+      '<main data-screen="lesson"><div data-step-image role="img" aria-label="Chin tuck, side view" style="width:200px;height:150px"></div>' +
+      '<p>Stand tall, eyes level.</p><button data-primary>Next</button></main>',
+  },
+  {
     rule: 'text-lines',
     bad: screen(PRIMARY + `<p>${'Long explanation about the science of intervals. '.repeat(4)}</p>`),
     good: screen(

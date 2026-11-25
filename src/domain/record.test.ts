@@ -32,7 +32,17 @@ function rest(restKind: string, endUnix: number, durationSeconds: number, comple
 function mood(unix: number): MoodCheck {
   return { id: `m${seq++}`, unix, valence: 'good', halt: { hungry: false, angry: false, lonely: false, tired: false } };
 }
-const noLogs = (): DayLogs => ({ sessions: [], rests: [], moods: [], drills: [] });
+const noLogs = (): DayLogs => ({ sessions: [], rests: [], moods: [], drills: [], lessons: [] });
+
+describe('learn items (P14)', () => {
+  it('a lesson log of the same exercise during the day satisfies the item', () => {
+    const items: PlanItem[] = [{ id: 'l', kind: 'learn', skillId: 'chin-tuck' }];
+    expect(evaluateItems(items, noLogs())[0]).toMatchObject({ satisfied: false, current: 0, required: 1 });
+    const other = { id: 'x', skillId: 'squat', unix: 1 };
+    expect(evaluateItems(items, { ...noLogs(), lessons: [other] })[0].satisfied).toBe(false);
+    expect(evaluateItems(items, { ...noLogs(), lessons: [other, { ...other, skillId: 'chin-tuck' }] })[0].satisfied).toBe(true);
+  });
+});
 
 /** Fixture shorthand: pattern ending today, `today` day number. */
 const fx = (history: string, today: number, extra: Partial<Parameters<typeof buildFixture>[0]> = {}) =>
@@ -93,6 +103,7 @@ describe('evaluateItems', () => {
       rests: [rest('silence', 1, 60)],
       moods: [mood(1), mood(2), mood(3), mood(4)],
       drills: [drill, { ...drill, id: 'd2' }],
+      lessons: [],
     });
     expect(extra.every((i) => i.satisfied)).toBe(true);
   });
@@ -120,7 +131,7 @@ describe('day assignment', () => {
 
 describe('record start and day statuses', () => {
   it('no approved plan → no record', () => {
-    const empty: RecordData = { cycles: [], plans: [], sessions: [], rests: [], moods: [], drills: [], justifications: [] };
+    const empty: RecordData = { cycles: [], plans: [], sessions: [], rests: [], moods: [], drills: [], justifications: [], lessons: [] };
     expect(recordStartDay(empty, CFG)).toBeNull();
     const r = computeRecord(empty, at(14355, 0.4), CFG);
     expect(r).toMatchObject({ recordStartDay: null, streak: 0, reservesHeld: 0, average: null, days: [] });

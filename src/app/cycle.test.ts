@@ -6,7 +6,7 @@ import { TABATA_ROUTINE_ID } from '../domain/engine';
 import type { AppData, PlanItem } from '../domain/types';
 import { emptyData } from '../storage/store';
 import { buildFixture } from '../dev/fixtures';
-import { approveWithDrafts, cycleDrafts, cycleRowSummary, draftForDay, firstPlanDays, lookBack, targetCycle } from './cycle';
+import { approveWithDrafts, cycleDrafts, cycleRowSummary, draftForDay, firstPlanDays, lookBack, targetCycle, unlearnedDays, unlearnedIn } from './cycle';
 
 const cfg = DEFAULT_CONFIG;
 const at = (day: number, frac: number) => dayStartUnix(day, cfg) + Math.floor(frac * cfg.dayLength);
@@ -137,5 +137,62 @@ describe('lookBack', () => {
   it('is null before the record', () => {
     const data = emptyData();
     expect(lookBack(1436, computeRecord(data, at(14355, 0.4), cfg))).toBeNull();
+  });
+});
+
+describe('curriculum drafts (P14)', () => {
+  /** A fresh user on 14355: no plans, no lessons. */
+  const fresh = (): AppData => {
+    const data = emptyData();
+    data.settings.onboardedUnix = at(14355, 0.3);
+    return data;
+  };
+  const now = at(14355, 0.4);
+
+  it('pre-fills one lesson a day, each day a Basics of the lessons before it', () => {
+    const drafts = cycleDrafts(fresh(), 1435, now, cfg);
+    expect(drafts.map((p) => p.day)).toEqual([14356, 14357, 14358, 14359]);
+    const learn = drafts.map((p) => p.items.find((i) => i.kind === 'learn'));
+    expect(learn.map((i) => i && i.kind === 'learn' && i.skillId)).toEqual(['chin-tuck', 'jumping-jacks', 'door-bar-dead-hang', 'high-plank']);
+    const workouts = drafts.map((p) => p.items.find((i) => i.kind === 'workout'));
+    expect(workouts[0]).toBeUndefined(); // day 1: nothing learned yet
+    expect(workouts.slice(1).map((w) => w && w.kind === 'workout' && w.routineId)).toEqual(['basics:1', 'basics:2', 'basics:3']);
+    expect(unlearnedDays(fresh(), drafts, now, cfg)).toEqual([]);
+  });
+
+  it('continues the curriculum into the next cycle from saved plans', () => {
+    const data = fresh();
+    const r = approveWithDrafts(data, 1435, now, cfg, false);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const next = cycleDrafts(r.data, 1436, now, cfg);
+    const first = next[0].items.find((i) => i.kind === 'learn');
+    expect(first && first.kind === 'learn' && first.skillId).toBe('rope-bounce');
+  });
+
+  it('refuses to approve a workout that uses an exercise not learned before its day', () => {
+    const data = fresh();
+    const items: PlanItem[] = [{ id: '14356-0', kind: 'workout', routineId: TABATA_ROUTINE_ID, targets: {} }];
+    data.plans = [{ day: 14356, items, updatedUnix: now }];
+    const drafts = cycleDrafts(data, 1435, now, cfg);
+    expect(unlearnedDays(data, drafts, now, cfg)[0]).toMatchObject({ day: 14356 });
+    expect(unlearnedIn(14356, items, data.plans, data, cfg)[0]).toBe('rope-speed-sprint-tabata');
+    expect(approveWithDrafts(data, 1435, now, cfg, false)).toMatchObject({ ok: false, error: 'unlearned', days: [14356] });
+  });
+
+  it('a lesson planned the day before is enough; the same day is not', () => {
+    const data = fresh();
+    const basicsOfChinTuck: PlanItem = { id: 'w', kind: 'workout', routineId: 'basics:1', targets: {} };
+    const learnChinTuck: PlanItem = { id: 'l', kind: 'learn', skillId: 'chin-tuck' };
+    const sameDay = [{ day: 14356, items: [learnChinTuck, basicsOfChinTuck], updatedUnix: now }];
+    expect(unlearnedIn(14356, sameDay[0].items, sameDay, data, cfg)).toEqual(['chin-tuck']);
+    const dayBefore = [{ day: 14356, items: [learnChinTuck], updatedUnix: now }, { day: 14357, items: [basicsOfChinTuck], updatedUnix: now }];
+    expect(unlearnedIn(14357, [basicsOfChinTuck], dayBefore, data, cfg)).toEqual([]);
+  });
+
+  it('graduated users get the rotation and their template back', () => {
+    const f = buildFixture({ history: '.DDT', today: 14355 });
+    const drafts = cycleDrafts(f.data, 1436, f.now, cfg);
+    expect(drafts.every((p) => p.items.every((i) => i.kind !== 'learn'))).toBe(true);
   });
 });

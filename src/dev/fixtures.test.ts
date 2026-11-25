@@ -33,6 +33,30 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
     expect(r.recordStartDay).toBe(r.today + 1);
     expect(r.average).toBeNull();
   },
+  'today-learn': (r) => {
+    expect(r.todayEval.items.map((p) => p.item)).toEqual([
+      { id: `${r.today}-0`, kind: 'learn', skillId: 'chin-tuck' },
+      { id: `${r.today}-1`, kind: 'mood', count: 2 },
+      { id: `${r.today}-2`, kind: 'drill', count: 1 },
+    ]);
+  },
+  'today-learn-workout': (r) => {
+    expect(r.todayEval.items[0].item).toMatchObject({ kind: 'learn', skillId: 'cobra-lift' });
+    expect(r.todayEval.items[1].item).toMatchObject({ kind: 'workout', routineId: 'basics:5' });
+    expect(r.streak).toBe(5);
+  },
+  'lesson-first-step': (r) => expect(r.todayEval.items[0].item).toMatchObject({ kind: 'learn', skillId: 'chin-tuck' }),
+  'lesson-multi-view': (r) => expect(r.todayEval.items[0].item).toMatchObject({ kind: 'learn', skillId: 'chin-tuck' }),
+  'lesson-last-step': (r) => expect(r.todayEval.items[0]).toMatchObject({ satisfied: false, item: { kind: 'learn' } }),
+  'lesson-combo': (r) => expect(r.todayEval.items[0].item).toMatchObject({ kind: 'learn', skillId: 'chin-tuck-cobra-hold' }),
+  'lesson-review': (r) => expect(r.todayEval.items.every((p) => p.item.kind !== 'learn')).toBe(true),
+  'preview-basics': (r) => expect(r.todayEval.items[1].item).toMatchObject({ id: `${r.today}-1`, kind: 'workout', routineId: 'basics:5' }),
+  'cycle-curriculum': (r) => {
+    expect(r.today).toBe(14358);
+    expect(r.days[r.days.length - 1].day).toBe(14359);
+    expect(r.todayEval.items[0].item).toMatchObject({ kind: 'learn' });
+  },
+  'day-edit-curriculum': (r) => expect(r.days.some((d) => d.status === 'upcoming' && d.plan?.items[0].kind === 'learn')).toBe(true),
   'today-start': (r) => {
     expect(r.todayEval).toMatchObject({ status: 'today', satisfiedCount: 0 });
     expect(r).toMatchObject({ streak: 15, reservesHeld: 2, pendingJustifications: [], isRecoveryDay: false, average: 1 });

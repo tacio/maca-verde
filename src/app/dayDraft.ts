@@ -48,6 +48,8 @@ export type DraftMain =
   | { key: string; kind: 'rest'; restKind: string; text: string; seconds?: number };
 
 export interface DayDraft {
+  /** The day's lesson (an exercise id), at most one (P14). */
+  learn?: string;
   main: DraftMain[];
   mood: number;
   drill: number;
@@ -162,6 +164,9 @@ export function draftFromItems(items: PlanItem[], cfg: DayConfig): DayDraft {
       case 'drill':
         draft.drill += item.count;
         break;
+      case 'learn':
+        draft.learn = item.skillId;
+        break;
     }
   }
   return draft;
@@ -194,6 +199,7 @@ export function draftToItems(
   const problems = new Set<DraftProblem>();
   const items: PlanItem[] = [];
   const id = () => itemId(day, items.length);
+  if (draft.learn) items.push({ id: id(), kind: 'learn', skillId: draft.learn });
   for (const m of draft.main) {
     if (m.kind === 'workout') {
       const targets: WorkoutTargets = {};

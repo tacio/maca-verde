@@ -18,6 +18,7 @@ import {
   type DayPlan,
   type DrillLog,
   type Justification,
+  type LessonLog,
   type MoodCheck,
   type PlanItem,
   type RestSession,
@@ -39,6 +40,7 @@ export const KEYS: Record<keyof AppData, string> = {
   moods: 'mv2:moods',
   drills: 'mv2:drills',
   justifications: 'mv2:justifications',
+  lessons: 'mv2:lessons',
   routines: 'mv2:routines',
 };
 
@@ -85,6 +87,7 @@ export function emptyData(): AppData {
     moods: [],
     drills: [],
     justifications: [],
+    lessons: [],
     routines: [],
   };
 }
@@ -117,6 +120,8 @@ export function isPlanItem(v: unknown): v is PlanItem {
     case 'mood':
     case 'drill':
       return isNum(v.count);
+    case 'learn':
+      return isStr(v.skillId);
     default:
       return false;
   }
@@ -197,6 +202,10 @@ export function isJustification(v: unknown): v is Justification {
   );
 }
 
+export function isLessonLog(v: unknown): v is LessonLog {
+  return isObj(v) && isStr(v.id) && isStr(v.skillId) && isNum(v.unix);
+}
+
 export function isRoutine(v: unknown): v is WorkoutRoutine {
   return (
     isObj(v) &&
@@ -219,6 +228,7 @@ const LIST_GUARDS = {
   moods: isMoodCheck,
   drills: isDrillLog,
   justifications: isJustification,
+  lessons: isLessonLog,
   routines: isRoutine,
 } satisfies Partial<Record<keyof AppData, (v: unknown) => boolean>>;
 
@@ -381,7 +391,9 @@ export function importBackup(json: string): ImportResult {
   const data = emptyData();
   try {
     for (const key of SLICES) {
-      const v = file.data[key];
+      let v = file.data[key];
+      // Lessons came later (P14): a backup from before them simply has none.
+      if (v === undefined && key === 'lessons') v = [];
       if (v === undefined) throw new Invalid(key);
       (data as unknown as Record<string, unknown>)[key] = parseSlice(key, v, true);
     }

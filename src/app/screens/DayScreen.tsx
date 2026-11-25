@@ -1,7 +1,9 @@
 import { useId, useState } from 'react';
-import { CalendarX, Lock, Plus, Trash2, X } from 'lucide-react';
+import { CalendarX, ChevronRight, Lock, Plus, Trash2, X } from 'lucide-react';
 import { WORKOUT_ROUTINES } from '../../data/routines';
-import { FOCUS_ROUTINE, focusOfDay } from '../../domain/engine';
+import { FOCUS_ROUTINE, findRoutine, focusOfDay } from '../../domain/engine';
+import { basicsId, curriculumComplete, knownBefore, knownPrefix, nextLesson, unknownExercises } from '../../domain/curriculum';
+import { exerciseName } from '../../workout/exerciseCues';
 import { approvalFor, canEditDay, dayStartUnix, findPlan, saveDayPlan } from '../../domain/plan';
 import type { TargetMetric } from '../../domain/types';
 import { nowUnix } from '../../time/clock';
@@ -16,7 +18,7 @@ import { Stepper } from '../../ui/Stepper';
 import { inputClass } from '../../ui/TextField';
 import { cx } from '../../ui/cx';
 import { useApp } from '../AppContext';
-import { draftForDay } from '../cycle';
+import { cycleDrafts, draftForDay, unlearnedIn, withDrafts } from '../cycle';
 import {
   METRIC_LABEL,
   PROBLEM_TEXT,
@@ -109,8 +111,26 @@ function DayEditor({ day, blank }: { day: number; blank?: boolean }) {
   const approved = !!approvalFor(data.cycles, cycleOf(day));
   const locksIn = formatDuration(dayStartUnix(day, cfg) - now, cfg);
 
+  // P14: what's learned before this day, counting the cycle's pre-filled days before it.
+  const context = withDrafts(data.plans, cycleDrafts(data, cycleOf(day), now, cfg));
+  const known = knownBefore(day, context, data.lessons, cfg);
+  const lessonProblem = (() => {
+    if (!result.ok) return null;
+    const after = withDrafts(context, [{ day, items: result.items, updatedUnix: now }]);
+    const here = unlearnedIn(day, result.items, after, data, cfg);
+    if (here.length) return `Learn ${exerciseName(here[0]).toLowerCase()} on an earlier day first`;
+    // Removing this day's lesson must not break a later day that uses it.
+    for (const p of after) {
+      if (p.day <= day || !canEditDay(p.day, now, cfg)) continue;
+      const later = unlearnedIn(p.day, p.items, after, data, cfg);
+      if (later.length) return `Day ${shortDay(p.day, 3)} uses ${exerciseName(later[0]).toLowerCase()} — keep its lesson`;
+    }
+    return null;
+  })();
+  const canSave = result.ok && !lessonProblem;
+
   const save = () => {
-    if (!result.ok) return;
+    if (!result.ok || lessonProblem) return;
     update((d) => {
       const r = saveDayPlan(d.plans, day, result.items, nowUnix(), cfg);
       return r.ok ? { ...d, plans: r.plans } : d;
@@ -121,12 +141,12 @@ function DayEditor({ day, blank }: { day: number; blank?: boolean }) {
   const reasonId = useId();
   const footer = (
     <div className="flex flex-col gap-2">
-      {!result.ok && (
+      {!canSave && (
         <p id={reasonId} className="text-center text-sm text-ink-muted">
-          {PROBLEM_TEXT[result.problems[0]]}
+          {result.ok ? lessonProblem : PROBLEM_TEXT[result.problems[0]]}
         </p>
       )}
-      <Button variant="primary" full disabled={!result.ok} aria-describedby={result.ok ? undefined : reasonId} onClick={save}>
+      <Button variant="primary" full disabled={!canSave} aria-describedby={canSave ? undefined : reasonId} onClick={save}>
         Save
       </Button>
     </div>
@@ -139,7 +159,7 @@ function DayEditor({ day, blank }: { day: number; blank?: boolean }) {
         {approved ? '' : ' · draft'}
       </p>
 
-      <DraftEditor draft={draft} setDraft={setDraft} focusDay={day} />
+      <DraftEditor draft={draft} setDraft={setDraft} focusDay={day} known={known} />
     </FullScreen>
   );
 }
@@ -152,23 +172,32 @@ export function DraftEditor({
   draft,
   setDraft,
   focusDay,
+  known,
 }: {
   draft: DayDraft;
   setDraft: (fn: (d: DayDraft) => DayDraft) => void;
   /** Day whose rotation picks the routine of a new workout. */
   focusDay: number;
+  /** Exercises learned before the day (P14); without it (template slots) lessons aren't offered. */
+  known?: ReadonlySet<string>;
 }) {
   const { data, cfg } = useApp();
   const custom = data.routines;
   const day = focusDay;
   const setMain = (key: string, fn: (m: DraftMain) => DraftMain | null) =>
     setDraft((d) => ({ ...d, main: d.main.flatMap((m) => (m.key === key ? (fn(m) ?? []) : [m])) }));
+  const learning = known !== undefined && !curriculumComplete(known);
+  const lesson = known === undefined ? undefined : nextLesson(known);
+  // While learning, a new workout is the Basics of what's known; none before the first lesson.
+  const n = known === undefined ? 0 : knownPrefix(known);
+  const newRoutine = learning ? (n > 0 ? basicsId(n) : undefined) : FOCUS_ROUTINE[focusOfDay(day)];
   return (
     <>
       <div className="flex flex-col gap-4">
+        {draft.learn && <LessonCard skillId={draft.learn} onRemove={() => setDraft((d) => ({ ...d, learn: undefined }))} />}
         {draft.main.map((m) =>
           m.kind === 'workout' ? (
-            <WorkoutCard key={m.key} item={m} onChange={(fn) => setMain(m.key, fn)} />
+            <WorkoutCard key={m.key} item={m} known={known} onChange={(fn) => setMain(m.key, fn)} />
           ) : (
             <RestCard key={m.key} item={m} onChange={(fn) => setMain(m.key, fn)} />
           ),
@@ -178,12 +207,16 @@ export function DraftEditor({
             No workout or rest yet. Rest is a plan too.
           </p>
         )}
-        <div className="grid grid-cols-2 gap-2">
+        <div className={cx('grid gap-2', !draft.learn && lesson ? 'grid-cols-3' : 'grid-cols-2')}>
+          {!draft.learn && lesson && (
+            <Button icon={Plus} onClick={() => setDraft((d) => ({ ...d, learn: lesson }))}>
+              Lesson
+            </Button>
+          )}
           <Button
             icon={Plus}
-            onClick={() =>
-              setDraft((d) => ({ ...d, main: [...d.main, newWorkout(FOCUS_ROUTINE[focusOfDay(day)], data.sessions, cfg, custom)] }))
-            }
+            disabled={!newRoutine}
+            onClick={() => newRoutine && setDraft((d) => ({ ...d, main: [...d.main, newWorkout(newRoutine, data.sessions, cfg, custom)] }))}
           >
             Workout
           </Button>
@@ -219,12 +252,47 @@ type Patch = (fn: (m: DraftMain) => DraftMain | null) => void;
 
 const card = 'flex flex-col gap-3 rounded-card border border-line bg-surface p-4';
 
-function WorkoutCard({ item, onChange }: { item: Extract<DraftMain, { kind: 'workout' }>; onChange: Patch }) {
+/** The day's lesson (P14): what it teaches, a way to preview it, and remove. */
+function LessonCard({ skillId, onRemove }: { skillId: string; onRemove: () => void }) {
+  const { open } = useNav();
+  const Icon = ITEM_ICON.learn;
+  return (
+    <div className={card}>
+      <div className="flex items-center gap-2">
+        <Icon aria-hidden size={20} strokeWidth={1.75} className="shrink-0 text-ink-muted" />
+        <h2 className="min-w-0 flex-1 truncate text-base font-medium text-ink">Learn · {exerciseName(skillId)}</h2>
+        <IconButton icon={Trash2} label="Remove lesson" onClick={onRemove} />
+      </div>
+      <Button variant="quiet" icon={ChevronRight} className="self-start px-2" onClick={() => open(`lesson:${skillId}`)}>
+        Preview lesson
+      </Button>
+    </div>
+  );
+}
+
+function WorkoutCard({
+  item,
+  known,
+  onChange,
+}: {
+  item: Extract<DraftMain, { kind: 'workout' }>;
+  known?: ReadonlySet<string>;
+  onChange: Patch;
+}) {
   const { data, cfg } = useApp();
   const custom = data.routines;
   const [adding, setAdding] = useState(false);
   const selectId = useId();
-  const routines = [...WORKOUT_ROUTINES, ...custom];
+  const current = findRoutine(item.routineId, custom);
+  // While learning, the Basics of what's known is offered too; routines with unlearned exercises are locked (P14).
+  const basics = known && !curriculumComplete(known) && knownPrefix(known) > 0 ? findRoutine(basicsId(knownPrefix(known))) : undefined;
+  const routines = [
+    ...(current && !WORKOUT_ROUTINES.includes(current) && !custom.includes(current) ? [current] : []),
+    ...(basics && basics.id !== current?.id ? [basics] : []),
+    ...WORKOUT_ROUTINES,
+    ...custom,
+  ];
+  const lockedBy = (r: (typeof routines)[number]) => (known ? unknownExercises(r, known)[0] : undefined);
   const used = new Set(item.targets.map((t) => t.metric));
   const missing = metricsFor(item.routineId, custom).filter((m) => !used.has(m));
   const Icon = ITEM_ICON.workout;
@@ -254,11 +322,15 @@ function WorkoutCard({ item, onChange }: { item: Extract<DraftMain, { kind: 'wor
           }}
           className={cx(inputClass, 'min-w-0 flex-1 font-medium')}
         >
-          {routines.map((r) => (
-            <option key={r.id} value={r.id}>
-              {routineName(r.id, custom)}
-            </option>
-          ))}
+          {routines.map((r) => {
+            const lock = r.id === item.routineId ? undefined : lockedBy(r);
+            return (
+              <option key={r.id} value={r.id} disabled={!!lock}>
+                {routineName(r.id, custom)}
+                {lock ? ` · after lesson: ${exerciseName(lock).toLowerCase()}` : ''}
+              </option>
+            );
+          })}
         </select>
         <IconButton icon={Trash2} label="Remove workout" onClick={() => onChange(() => null)} />
       </div>

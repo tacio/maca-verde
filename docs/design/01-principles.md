@@ -3,7 +3,7 @@
 Status: approved · day 14359
 Inputs: [00-brief.md](00-brief.md)
 
-Thirteen principles, each with the evidence behind it, what it means for this app, and a **check** an agent can verify on a screenshot or in code. Evidence strength is rated:
+Fourteen principles, each with the evidence behind it, what it means for this app, and a **check** an agent can verify on a screenshot or in code. Evidence strength is rated:
 
 - **●●●** meta-analysis or large field experiment
 - **●●○** peer-reviewed experiments, replicated or consistent
@@ -89,6 +89,13 @@ The home screen is today's plan as a short checklist with one completion indicat
 - **Apply.** Gamification = competence feedback only: day done, cycle done, records beaten, recovery day. Day-complete is the peak moment (full-screen, ≤ 2 s, skippable); item completion is a small inline tick. Occasional variable delight (e.g. a rare variant on day-done). No points currency, shop, levels for their own sake, or leaderboards. Visual system: neutral palette, **one** accent color, one typeface, tokens only, WCAG AA contrast, light/dark follow the system.
 - **Check.** Celebration components exist only for the listed events. CSS uses only design tokens (no raw hex/Tailwind palette colors outside the token file). Text contrast ≥ 4.5:1 in both themes.
 
+### P14 — One new thing a day (added day 14365)
+New movements arrive one at a time, taught before they're used, parts before combinations; the first days are easy on purpose.
+
+- **Evidence.** Complex motor tasks whose parts are loosely linked are learned better by practising the parts first (Naylor & Briggs 1963; part-task training review, Wightman & Lintern 1985, *secondary*) ●●○. Watching a demonstration before trying improves how a movement is performed (observational-learning meta-analysis, Ashford, Bennett & Davids 2006, *secondary*) ●●○. Mastery experiences are the strongest source of self-efficacy (Bandura 1977) ●●○. Exercise felt as unpleasant predicts less exercise later (Rhodes & Kates 2015 review; Ekkekakis et al. 2011) ●●○ — an overwhelming first week is a dropout risk. Games introduce one mechanic per level and let the first levels be trivial (Koster 2004; Cook's "skill atoms", 2007) ●○○.
+- **Apply.** A lesson is a plan item that teaches one exercise: steps with a picture each (angles when needed) and a short try, outside any workout. An exercise enters workouts only on a day after its lesson. Combinations (cobra + chin tuck, Y-T-W) follow a lesson for each part. Early workouts are generated from what's been learned and grow one exercise at a time ([04-curriculum](04-curriculum.md)).
+- **Check.** No day plan holds more than one lesson. No workout item on day *d* holds an exercise whose lesson isn't planned on a day before *d* or logged before *d* starts. In the curriculum every skill's parts come earlier. Every lesson step has an image slot and text ≤ 2 lines.
+
 ---
 
 ## Coverage of the brief
@@ -103,12 +110,14 @@ The home screen is today's plan as a short checklist with one completion indicat
 | Earphones, phone meters away | P12 |
 | Clutter, explanations, too much at once | P9, P10, P13 |
 | "Asana, not Jira", gamification | P9, P13 |
+| Gradual introduction, lessons | P10, P13, P14 |
 
 ## Evidence caveats
 
 - Effect sizes for implementation intentions shrink a lot after bias correction; self-imposed deadline results failed recent replications. They justify cheap design choices, not core bets.
 - Streak research is mostly consumer-behavior lab work plus company A/B tests; no peer-reviewed Duolingo data exists.
 - Several figures (Lally missed-day effect, Nunes & Drèze card rates, Kivetz) were read through secondary summaries.
+- P14's motor-learning sources were cited from prior knowledge, not re-read for this revision; game-design sources are practitioner writing.
 
 ## Sources
 

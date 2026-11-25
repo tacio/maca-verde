@@ -9,11 +9,14 @@
  */
 
 import { cycleOf, type DayConfig } from '../time/daykeep';
-import { suggestDay } from '../domain/engine';
+import { findRoutine, suggestDay } from '../domain/engine';
+import { curriculumComplete, isBasicsId, knownBefore, unknownExercises } from '../domain/curriculum';
 import {
   approvalFor,
   approveCycle,
+  canEditDay,
   cycleDays,
+  emptyTemplate,
   findPlan,
   prefillCycle,
   saveDayPlan,
@@ -22,7 +25,7 @@ import {
   validatePlanItems,
 } from '../domain/plan';
 import type { RecordSummary } from '../domain/record';
-import type { AppData, DayPlan, PlanItem, WorkoutRoutine } from '../domain/types';
+import type { AppData, DayPlan, PlanItem, Template, WorkoutRoutine } from '../domain/types';
 import { classifyDay, itemText, type CellKind } from './view';
 
 /**
@@ -41,9 +44,63 @@ export function firstPlanDays(today: number): number[] {
   return cycleDays(cycleOf(today + 1)).filter((d) => d > today);
 }
 
-/** Plans the editor shows for a cycle's unstarted days: saved ones, else the pre-fill. */
+/** `plans` with `drafts` replacing the plans of the same days. */
+export function withDrafts(plans: DayPlan[], drafts: DayPlan[]): DayPlan[] {
+  const days = new Set(drafts.map((p) => p.day));
+  return [...plans.filter((p) => !days.has(p.day)), ...drafts];
+}
+
+/**
+ * The template the pre-fill may use: none while the curriculum runs (a copied
+ * lesson would re-teach, P14), and never a slot holding a lesson or a Basics
+ * workout (curriculum-only items).
+ */
+export function usableTemplate(data: AppData, cycle: number, now: number, cfg: DayConfig): Template {
+  const first = cycleDays(cycle).find((d) => canEditDay(d, now, cfg)) ?? cycle * 10;
+  if (!curriculumComplete(knownBefore(first, data.plans, data.lessons, cfg))) return emptyTemplate();
+  return data.template.map((slot) =>
+    slot.some((i) => i.kind === 'learn' || (i.kind === 'workout' && isBasicsId(i.routineId))) ? [] : slot,
+  );
+}
+
+/**
+ * Plans the editor shows for a cycle's unstarted days: saved ones, else the
+ * pre-fill, each day suggested with what's known after the days before it.
+ */
 export function cycleDrafts(data: AppData, cycle: number, now: number, cfg: DayConfig): DayPlan[] {
-  return prefillCycle(cycle, data.template, data.plans, (d) => suggestDay(d, data.sessions, cfg), now, cfg);
+  const suggest = (d: number, earlier: DayPlan[]) =>
+    suggestDay(d, data.sessions, cfg, knownBefore(d, withDrafts(data.plans, earlier), data.lessons, cfg));
+  return prefillCycle(cycle, usableTemplate(data, cycle, now, cfg), data.plans, suggest, now, cfg);
+}
+
+/* --- learned before used (P14) ------------------------------------------- */
+
+export interface Unlearned {
+  day: number;
+  /** Exercises of the day's workouts whose lesson isn't on an earlier day. */
+  exerciseIds: string[];
+}
+
+/** Exercises in `items` (a plan for `day`) not known before the day, given all `plans`. */
+export function unlearnedIn(day: number, items: PlanItem[], plans: DayPlan[], data: Pick<AppData, 'lessons' | 'routines'>, cfg: DayConfig): string[] {
+  const known = knownBefore(day, plans, data.lessons, cfg);
+  const out: string[] = [];
+  for (const i of items) {
+    if (i.kind !== 'workout') continue;
+    const r = findRoutine(i.routineId, data.routines);
+    if (r) for (const id of unknownExercises(r, known)) if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+/** Unstarted days among `drafts` whose workouts use an exercise not learned before them, oldest first. */
+export function unlearnedDays(data: AppData, drafts: DayPlan[], now: number, cfg: DayConfig): Unlearned[] {
+  const plans = withDrafts(data.plans, drafts);
+  return drafts
+    .filter((p) => canEditDay(p.day, now, cfg))
+    .map((p) => ({ day: p.day, exerciseIds: unlearnedIn(p.day, p.items, plans, data, cfg) }))
+    .filter((u) => u.exerciseIds.length > 0)
+    .sort((a, b) => a.day - b.day);
 }
 
 /** The plan a day editor starts from: the saved plan, else the cycle pre-fill for that day. */
@@ -60,7 +117,7 @@ export function invalidDraftDays(drafts: DayPlan[]): number[] {
 
 export type ApproveDraftsResult =
   | { ok: true; data: AppData; onTime: boolean; days: number[] }
-  | { ok: false; error: 'already_approved' | 'started' | 'invalid_plans'; days: number[] };
+  | { ok: false; error: 'already_approved' | 'started' | 'invalid_plans' | 'unlearned'; days: number[] };
 
 /**
  * Save the cycle's unsaved pre-filled days, approve the cycle and, if asked,
@@ -74,7 +131,10 @@ export function approveWithDrafts(
   saveTemplate: boolean,
 ): ApproveDraftsResult {
   let plans = data.plans;
-  for (const draft of cycleDrafts(data, cycle, now, cfg)) {
+  const drafts = cycleDrafts(data, cycle, now, cfg);
+  const unlearned = unlearnedDays(data, drafts, now, cfg);
+  if (unlearned.length) return { ok: false, error: 'unlearned', days: unlearned.map((u) => u.day) };
+  for (const draft of drafts) {
     if (findPlan(plans, draft.day)) continue;
     const r = saveDayPlan(plans, draft.day, draft.items, now, cfg);
     if (!r.ok) return { ok: false, error: r.error === 'locked' ? 'started' : 'invalid_plans', days: [draft.day] };
@@ -94,7 +154,7 @@ export function approveWithDrafts(
 /* --- display ------------------------------------------------------------- */
 
 export interface CycleRowSummary {
-  /** Workouts and rests, "Tabata · 2 rounds + Rest · silence 900 s". */
+  /** Lesson, workouts and rests, "Learn · Squat + Basics · 2 rounds". */
   title: string;
   mood: number;
   drill: number;
@@ -102,7 +162,10 @@ export interface CycleRowSummary {
 
 /** One line per day in the cycle editor: main items, plus mood and drill counts. */
 export function cycleRowSummary(items: PlanItem[], cfg: DayConfig, custom: WorkoutRoutine[] = []): CycleRowSummary {
-  const main = items.filter((i) => i.kind === 'workout' || i.kind === 'rest').map((i) => itemText(i, cfg, custom));
+  // The lesson first: it's what's new that day (P14).
+  const main = [...items.filter((i) => i.kind === 'learn'), ...items.filter((i) => i.kind === 'workout' || i.kind === 'rest')].map((i) =>
+    itemText(i, cfg, custom),
+  );
   const mood = items.reduce((n, i) => (i.kind === 'mood' ? n + i.count : n), 0);
   const drill = items.reduce((n, i) => (i.kind === 'drill' ? n + i.count : n), 0);
   const title = main.length ? main.join(' + ') : items.length ? 'Checks only' : 'Nothing planned';

@@ -71,6 +71,13 @@ describe('next item', () => {
     expect(nextItem([p(mood, false), p(tabata, true), p(drill, false)])?.item).toBe(mood);
     expect(nextItem([p(tabata, true)])).toBeUndefined();
   });
+  it('puts a due lesson first (P14)', () => {
+    const learn: PlanItem = { id: 'l', kind: 'learn', skillId: 'downward-dog' };
+    expect(nextItem([p(tabata, false), p(learn, false)])?.item).toBe(learn);
+    expect(nextItem([p(tabata, false), p(learn, true)])?.item).toBe(tabata);
+    expect(actionText(learn)).toBe('Learn Downward dog');
+    expect(itemText(learn, DEFAULT_CONFIG)).toBe('Learn · Downward dog');
+  });
   it('labels the action', () => {
     expect(actionText(tabata)).toBe('Start Tabata');
     expect(actionText(silence)).toBe('Start silence');

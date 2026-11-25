@@ -19,7 +19,7 @@ describe('phaseAnnouncement', () => {
   });
 
   it('rest: rest + what is next', () => {
-    expect(say(2)).toEqual({ beep: 'rest', text: 'Rest. Next: Hollow body.' });
+    expect(say(2)).toEqual({ beep: 'rest', text: 'Rest. Next: Hollow rock.' });
   });
 
   it('round rest and the first work of the next round name the round', () => {

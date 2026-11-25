@@ -46,6 +46,12 @@ describe('validatePlanItems', () => {
     expect(validatePlanItems([{ id: 'r', kind: 'rest', restKind: 'silence', durationSeconds: 0 }])).toContain('bad_duration');
     expect(validatePlanItems([mood, { ...drill, id: 'm' }])).toContain('duplicate_id');
   });
+  it('allows at most one lesson a day, of a known lesson (P14)', () => {
+    const learn: PlanItem = { id: 'l', kind: 'learn', skillId: 'chin-tuck' };
+    expect(validatePlanItems([learn])).toEqual([]);
+    expect(validatePlanItems([learn, { ...learn, id: 'l2', skillId: 'squat' }])).toContain('duplicate_learn');
+    expect(validatePlanItems([{ ...learn, skillId: 'nope' }])).toContain('bad_skill');
+  });
   it('allows several workout items', () => {
     const w: PlanItem = { id: 'a', kind: 'workout', routineId: 'x', targets: { rounds: 1 } };
     expect(validatePlanItems([w, { ...w, id: 'b' }])).toEqual([]);

@@ -20,6 +20,7 @@ import type {
   DayPlan,
   DrillLog,
   Justification,
+  LessonLog,
   MoodCheck,
   PlanItem,
   RecordData,
@@ -40,7 +41,7 @@ export interface ItemProgress {
   satisfied: boolean;
   /** Logged amount toward the item: matching sessions (0/1) or check count. */
   current: number;
-  /** 1 for workouts and rests, `count` for mood and drill items. */
+  /** 1 for workouts, rests and lessons, `count` for mood and drill items. */
   required: number;
 }
 
@@ -63,6 +64,7 @@ export interface DayLogs {
   rests: RestSession[];
   moods: MoodCheck[];
   drills: DrillLog[];
+  lessons: LessonLog[];
 }
 
 /* --- matching ----------------------------------------------------------- */
@@ -129,6 +131,10 @@ export function evaluateItems(items: PlanItem[], logs: DayLogs): ItemProgress[] 
         return { item, satisfied: logs.moods.length >= item.count, current: logs.moods.length, required: item.count };
       case 'drill':
         return { item, satisfied: logs.drills.length >= item.count, current: logs.drills.length, required: item.count };
+      case 'learn': {
+        const ok = logs.lessons.some((l) => l.skillId === item.skillId);
+        return { item, satisfied: ok, current: ok ? 1 : 0, required: 1 };
+      }
     }
   });
 }
@@ -152,6 +158,7 @@ export class LogIndex {
   private rests: Map<number, RestSession[]>;
   private moods: Map<number, MoodCheck[]>;
   private drills: Map<number, DrillLog[]>;
+  private lessons: Map<number, LessonLog[]>;
   private justifications: Map<number, Justification>;
 
   constructor(data: RecordData, cfg: DayConfig) {
@@ -159,6 +166,7 @@ export class LogIndex {
     this.rests = groupBy(data.rests, (r) => dayAt(r.endUnix, cfg));
     this.moods = groupBy(data.moods, (m) => dayAt(m.unix, cfg));
     this.drills = groupBy(data.drills, (d) => dayAt(d.unix, cfg));
+    this.lessons = groupBy(data.lessons, (l) => dayAt(l.unix, cfg));
     this.justifications = new Map();
     for (const j of [...data.justifications].sort((a, b) => a.unix - b.unix)) this.justifications.set(j.day, j);
   }
@@ -169,6 +177,7 @@ export class LogIndex {
       rests: this.rests.get(day) ?? [],
       moods: this.moods.get(day) ?? [],
       drills: this.drills.get(day) ?? [],
+      lessons: this.lessons.get(day) ?? [],
     };
   }
 

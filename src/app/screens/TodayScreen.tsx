@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BadgeCheck, BarChart3, CalendarPlus, Check, ChevronRight, PenLine, Play, Smile, Sparkles, Sprout, Sunrise, TriangleAlert } from 'lucide-react';
+import { BadgeCheck, BarChart3, CalendarPlus, Check, ChevronRight, GraduationCap, PenLine, Play, Smile, Sparkles, Sprout, Sunrise, TriangleAlert } from 'lucide-react';
 import { formatDuration, shortDay } from '../../time/daykeep';
 import { Button } from '../../ui/Button';
 import { DayHeader } from '../../ui/DayHeader';
@@ -153,7 +153,7 @@ export function TodayScreen({ preview }: { preview?: string }) {
   if (previewItem) action = undefined; // the sheet holds the one primary (Start)
   else if (primary.kind === 'item')
     action = (
-      <Button variant="primary" full icon={primary.progress.item.kind === 'mood' ? Smile : Play} onClick={() => open(itemFlow(primary.progress.item))}>
+      <Button variant="primary" full icon={primary.progress.item.kind === 'mood' ? Smile : primary.progress.item.kind === 'learn' ? GraduationCap : Play} onClick={() => open(itemFlow(primary.progress.item))}>
         {primaryText(primary.progress.item, cfg, data.sessions, custom)}
       </Button>
     );

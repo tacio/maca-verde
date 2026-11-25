@@ -94,6 +94,13 @@ describe('draft ⇄ items', () => {
     expect(draftToItems(draft, 14362, cfg)).toEqual({ ok: true, items });
   });
 
+  it('round-trips the day’s lesson, first in the plan', () => {
+    const withLesson: PlanItem[] = [{ id: '14362-0', kind: 'learn', skillId: 'squat' }, ...items.map((i, n) => ({ ...i, id: `14362-${n + 1}` }))];
+    const draft = draftFromItems(withLesson, cfg);
+    expect(draft.learn).toBe('squat');
+    expect(draftToItems(draft, 14362, cfg)).toEqual({ ok: true, items: withLesson });
+  });
+
   it('keeps exact values while a field is untouched, and parses edits', () => {
     const draft = draftFromItems(items, cfg);
     const rest = draft.main[1];

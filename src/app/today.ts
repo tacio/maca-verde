@@ -24,6 +24,7 @@ import type {
   WorkoutSession,
 } from '../domain/types';
 import { formatAverage } from '../ui/StatsBlock';
+import { exerciseName } from '../workout/exerciseCues';
 import { nextItem, routineName } from './view';
 
 /* --- primary action (J4) -------------------------------------------------- */
@@ -75,7 +76,7 @@ export function todayPrimary(record: RecordSummary, cycles: AppData['cycles'], n
   return { kind: 'done' };
 }
 
-/** The flow a plan item opens: `workout:<id>`, `rest:<id>`, `mood`, `drill`. */
+/** The flow a plan item opens: `workout:<id>`, `rest:<id>`, `learn:<id>`, `mood`, `drill`. */
 export function itemFlow(item: PlanItem): string {
   switch (item.kind) {
     case 'workout':
@@ -86,6 +87,8 @@ export function itemFlow(item: PlanItem): string {
       return 'mood';
     case 'drill':
       return 'drill';
+    case 'learn':
+      return `learn:${item.id}`;
   }
 }
 
@@ -111,6 +114,8 @@ export function primaryText(item: PlanItem, cfg: DayConfig, sessions: WorkoutSes
       return 'Check in';
     case 'drill':
       return 'Start pause drill';
+    case 'learn':
+      return `Learn ${exerciseName(item.skillId)}`;
   }
 }
 
@@ -228,6 +233,8 @@ export function leftText(e: DayEvaluation, custom: WorkoutRoutine[] = []): strin
           return n === 1 ? '1 mood check' : `${n} mood checks`;
         case 'drill':
           return n === 1 ? '1 pause drill' : `${n} pause drills`;
+        case 'learn':
+          return `the ${exerciseName(p.item.skillId).toLowerCase()} lesson`;
       }
     });
   return `${e.satisfiedCount} of ${e.totalCount} done · ${listJoin(left)} left`;

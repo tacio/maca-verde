@@ -1,4 +1,4 @@
-import { Dumbbell, Leaf, Smile, Wind, type LucideIcon } from 'lucide-react';
+import { Dumbbell, GraduationCap, Leaf, Smile, Wind, type LucideIcon } from 'lucide-react';
 import type { PlanItemKind } from '../domain/types';
 
 /** One icon per plan item kind (◐ mood, ⚡ drill in the wireframes). */
@@ -7,6 +7,7 @@ export const ITEM_ICON: Record<PlanItemKind, LucideIcon> = {
   rest: Leaf,
   mood: Smile,
   drill: Wind,
+  learn: GraduationCap,
 };
 
 const COUNT_LABEL = { mood: ['mood check', 'mood checks'], drill: ['pause drill', 'pause drills'] } as const;

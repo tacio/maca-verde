@@ -1,5 +1,6 @@
-import { ChevronDown, Play } from 'lucide-react';
+import { ChevronDown, GraduationCap, Play } from 'lucide-react';
 import { EXERCISES } from '../../data/exercises';
+import { LESSONS } from '../../data/lessons';
 import type { WorkoutItem, WorkoutRoutine } from '../../domain/types';
 import { formatSeconds } from '../../time/seconds';
 import { exerciseName } from '../../workout/exerciseCues';
@@ -62,6 +63,7 @@ export function WorkoutPreview({ item, onClose }: { item: WorkoutItem; onClose: 
 
 /** A routine's exercises with their intervals, each with a "How?" disclosure (J10, P10). */
 export function ExerciseList({ exercises }: { exercises: WorkoutRoutine['exercises'] }) {
+  const { open } = useNav();
   return (
     <ol className="-mx-3 flex flex-col">
       {exercises.map((ex, i) => {
@@ -99,6 +101,11 @@ export function ExerciseList({ exercises }: { exercises: WorkoutRoutine['exercis
                     ))}
                   </ul>
                   {info.cadenceTip && <p className="pt-1">{info.cadenceTip}</p>}
+                  {LESSONS[ex.exerciseId] && (
+                    <Button variant="quiet" icon={GraduationCap} className="-ml-2 mt-1 px-2" onClick={() => open(`lesson:${ex.exerciseId}`)}>
+                      Open lesson
+                    </Button>
+                  )}
                 </div>
               )}
             </details>

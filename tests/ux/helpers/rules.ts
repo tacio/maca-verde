@@ -16,6 +16,8 @@
  *   [data-screen="justify"]  no second-person blame ("you failed/missed/didn't") and a
  *                            [data-adjust-link] to edit the next days (P8)
  *   [data-screen="workout|rest|drill"]  timed flows: no visible button/link named "skip" (P12)
+ *   [data-screen="lesson"]   shows exactly one visible [data-step-image] for the step (P14);
+ *                            its instruction is held to the 2-line rule like any text
  */
 import type { Page } from '@playwright/test';
 
@@ -29,7 +31,8 @@ export type RuleName =
   | 'text-lines'
   | 'last-hint'
   | 'justify-copy'
-  | 'no-skip';
+  | 'no-skip'
+  | 'lesson-image';
 
 export interface Violation {
   rule: RuleName;
@@ -128,6 +131,12 @@ export async function checkDom(page: Page): Promise<Violation[]> {
       const m = screen.innerText.match(new RegExp(L.blame, 'i'));
       if (m) add('justify-copy', `screen "justify": blames the person ("${m[0]}")`);
       if (!screen.querySelector('[data-adjust-link]')) add('justify-copy', 'screen "justify": no [data-adjust-link] to adjust the next days');
+    }
+
+    // P14 — every lesson step shows its picture (or the placeholder that marks the slot).
+    for (const screen of screens.filter((s) => s.dataset.screen === 'lesson')) {
+      const n = [...screen.querySelectorAll('[data-step-image]')].filter(visible).length;
+      if (n !== 1) add('lesson-image', `screen "lesson": ${n} visible [data-step-image], needs exactly 1`);
     }
 
     // P12 — no skipping in timed flows: the plan is followed or ended early, never bargained.

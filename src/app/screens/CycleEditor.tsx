@@ -8,7 +8,8 @@ import { Checkbox } from '../../ui/Checkbox';
 import { ListRow } from '../../ui/ListRow';
 import { cx } from '../../ui/cx';
 import { useApp } from '../AppContext';
-import { approveWithDrafts, cycleDrafts, cycleRowSummary, lookBack, type LookBack } from '../cycle';
+import { approveWithDrafts, cycleDrafts, cycleRowSummary, lookBack, unlearnedDays, type LookBack } from '../cycle';
+import { exerciseName } from '../../workout/exerciseCues';
 import { DayCell } from '../DayCell';
 import { Moment } from '../Moment';
 import { CountBadge } from '../ItemIcon';
@@ -61,6 +62,10 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
   const planOf = (day: number) =>
     !approval && canEditDay(day, now, cfg) ? drafts.find((p) => p.day === day) : findPlan(data.plans, day);
   const invalid = approval ? [] : unstarted.filter((d) => validatePlanItems(planOf(d)?.items ?? []).length > 0);
+  // P14: a workout may only use exercises whose lesson comes on an earlier day.
+  const unlearned = approval ? [] : unlearnedDays(data, drafts, now, cfg).filter((u) => !invalid.includes(u.day));
+  const unlearnedOf = (day: number) => unlearned.find((u) => u.day === day);
+  const learnFirst = (day: number) => `Learn ${exerciseName(unlearnedOf(day)!.exerciseIds[0]).toLowerCase()} first`;
 
   let subtitle: ReactNode;
   if (approval) subtitle = `Approved at ${shortStamp(approval.approvedUnix, cfg)}`;
@@ -86,14 +91,23 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
       return result.ok ? result.data : d;
     });
     if (result?.ok) setMoment({ onTime: result.onTime, days: result.days });
-    else setError(result?.error === 'started' ? 'This cycle has fully started.' : 'Some days need a plan first.');
+    else
+      setError(
+        result?.error === 'started'
+          ? 'This cycle has fully started.'
+          : result?.error === 'unlearned'
+            ? 'Some workouts use exercises not learned yet.'
+            : 'Some days need a plan first.',
+      );
   };
 
   const reason =
     error ??
     (invalid.length
       ? `Day ${shortDay(invalid[0], 3)} needs a plan`
-      : unstarted.length === 0
+      : unlearned.length
+        ? `Day ${shortDay(unlearned[0].day, 3)}: ${learnFirst(unlearned[0].day).replace(/^L/, 'l')}`
+        : unstarted.length === 0
         ? 'Nothing left to approve'
         : null);
 
@@ -138,7 +152,7 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
                 // Started days outside this plan (onboarding, late approval) are left out.
                 if (started && !plan) return null;
                 const sum = plan ? cycleRowSummary(plan.items, cfg, data.routines) : null;
-                const bad = invalid.includes(day);
+                const bad = invalid.includes(day) || !!unlearnedOf(day);
                 return (
                   <li key={day}>
                     <ListRow
@@ -147,7 +161,9 @@ export function CycleEditor({ cycle, layout, onFinish, approveLabel = 'Approve c
                           {shortDay(day, 3)}
                         </span>
                       }
-                      title={started ? (sum?.title ?? 'Started') : bad ? 'Needs a plan' : sum!.title}
+                      title={
+                        started ? (sum?.title ?? 'Started') : invalid.includes(day) ? 'Needs a plan' : unlearnedOf(day) ? learnFirst(day) : sum!.title
+                      }
                       muted={started || bad}
                       trailing={
                         started ? (

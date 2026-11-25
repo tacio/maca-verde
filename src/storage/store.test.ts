@@ -102,6 +102,20 @@ describe('store', () => {
     expect(importBackup(exportBackup(data))).toEqual({ ok: true, data });
   });
 
+  it('round-trips lessons and learn items; a backup from before lessons imports with none', () => {
+    const f = buildFixture({ history: '.DDP', today: 14355, curriculum: true });
+    expect(f.data.lessons.length).toBeGreaterThan(0);
+    expect(f.data.plans.some((p) => p.items.some((i) => i.kind === 'learn'))).toBe(true);
+    expect(importBackup(exportBackup(f.data))).toEqual({ ok: true, data: f.data });
+    const file = JSON.parse(exportBackup(f.data));
+    const { lessons: _l, ...old } = file.data;
+    const r = importBackup(JSON.stringify({ ...file, data: old }));
+    expect(r.ok && r.data.lessons).toEqual([]);
+    const mem = memoryStorage();
+    saveData(f.data, mem);
+    expect(loadData(mem)).toEqual(f.data);
+  });
+
   it('backup import validates strictly', () => {
     const file = JSON.parse(exportBackup(sample()));
     const imp = (f: unknown) => importBackup(JSON.stringify(f));

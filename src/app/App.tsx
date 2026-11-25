@@ -8,6 +8,7 @@ import { DayScreen } from './screens/DayScreen';
 import { DrillScreen } from './screens/DrillScreen';
 import { HistoryDayScreen, HistoryScreen } from './screens/HistoryScreen';
 import { JustifyScreen } from './screens/JustifyScreen';
+import { LearnScreen, LessonScreen } from './screens/LessonScreen';
 import { MoodScreen } from './screens/MoodScreen';
 import { Onboarding } from './screens/Onboarding';
 import { PlaceholderScreen } from './screens/Placeholder';
@@ -97,6 +98,12 @@ function Screens({ onboardStep }: { onboardStep?: OnboardStep }) {
       }
       case 'rest':
         return <RestScreen key={flow} itemId={args[0] ?? ''} mid={args[1] === 'mid'} />;
+      case 'learn':
+        // `learn:<itemId>[:<step>]`: a planned lesson; dev scenarios open a step (1-based).
+        return <LearnScreen key={flow} itemId={args[0] ?? ''} step={intArg(args[1])} />;
+      case 'lesson':
+        // `lesson:<exerciseId>[:<step>]`: review a lesson; logs nothing.
+        return <LessonScreen key={flow} skillId={args[0] ?? ''} step={intArg(args[1])} />;
       case 'preview':
         // The workout preview is a sheet over Today, as a flow so back closes it.
         return <TodayScreen preview={args[0]} />;

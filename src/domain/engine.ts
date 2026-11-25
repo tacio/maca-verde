@@ -26,8 +26,9 @@
  */
 
 import { WORKOUT_ROUTINES } from '../data/routines';
+import { basicsCount, basicsId, basicsRoutine, curriculumComplete, knownPrefix, nextLesson } from './curriculum';
 import { fromUnix, dayStart, type DayConfig } from '../time/daykeep';
-import type { PlanItem, TargetMetric, WorkoutItem, WorkoutRoutine, WorkoutSession, WorkoutTargets } from './types';
+import type { PlanItem, TargetMetric, WorkoutRoutine, WorkoutSession, WorkoutTargets } from './types';
 
 export const POSTURE_ROUTINE_ID = 'posture-text-neck-antidote';
 export const TABATA_ROUTINE_ID = 'tabata-belly-shred';
@@ -140,7 +141,10 @@ export const FOCUS_ROUTINE: Record<Focus, string> = {
   rope: ROPE_ROUTINE_ID,
 };
 
+/** A custom, built-in or generated Basics (`basics:<n>`) routine. */
 export function findRoutine(id: string, custom: WorkoutRoutine[] = []): WorkoutRoutine | undefined {
+  const n = basicsCount(id);
+  if (n !== undefined) return basicsRoutine(n);
   return custom.find((r) => r.id === id) ?? WORKOUT_ROUTINES.find((r) => r.id === id);
 }
 
@@ -170,17 +174,27 @@ export function suggestTargets(routineId: string, history: WorkoutSession[], cus
 }
 
 /**
- * The engine's plan for `day`: one workout following the rotation, 2 mood
- * checks and 1 pause drill. Only sessions that ended before the day starts
+ * The engine's plan for `day`. Only sessions that ended before the day starts
  * inform the targets. Item ids are `${day}-${index}`.
+ *
+ * While the curriculum runs (P14; `known` = exercises learned before the day):
+ * the next lesson, a Basics workout of what's known (none before the first
+ * lesson), 2 mood checks and 1 pause drill. Once it's complete: one workout
+ * following the rotation, 2 mood checks and 1 pause drill.
  */
-export function suggestDay(day: number, history: WorkoutSession[], cfg: DayConfig): PlanItem[] {
+export function suggestDay(day: number, history: WorkoutSession[], cfg: DayConfig, known: ReadonlySet<string> = new Set()): PlanItem[] {
   const before = history.filter((s) => fromUnix(s.endUnix, cfg) < dayStart(day, cfg));
-  const routineId = FOCUS_ROUTINE[focusOfDay(day)];
-  const workout: WorkoutItem = { id: `${day}-0`, kind: 'workout', routineId, targets: suggestTargets(routineId, before) };
-  return [
-    workout,
-    { id: `${day}-1`, kind: 'mood', count: DEFAULT_MOOD_COUNT },
-    { id: `${day}-2`, kind: 'drill', count: DEFAULT_DRILL_COUNT },
-  ];
+  const items: PlanItem[] = [];
+  const id = () => `${day}-${items.length}`;
+  if (!curriculumComplete(known)) {
+    items.push({ id: id(), kind: 'learn', skillId: nextLesson(known)! });
+    const n = knownPrefix(known);
+    if (n > 0) items.push({ id: id(), kind: 'workout', routineId: basicsId(n), targets: suggestTargets(basicsId(n), before) });
+  } else {
+    const routineId = FOCUS_ROUTINE[focusOfDay(day)];
+    items.push({ id: id(), kind: 'workout', routineId, targets: suggestTargets(routineId, before) });
+  }
+  items.push({ id: id(), kind: 'mood', count: DEFAULT_MOOD_COUNT });
+  items.push({ id: id(), kind: 'drill', count: DEFAULT_DRILL_COUNT });
+  return items;
 }

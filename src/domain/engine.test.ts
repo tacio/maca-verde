@@ -16,6 +16,11 @@ import {
   suggestTargets,
 } from './engine';
 import type { WorkoutRoutine, WorkoutSession } from './types';
+import { CURRICULUM } from '../data/lessons';
+import { basicsId } from './curriculum';
+
+/** Every lesson learned: the curriculum is complete and the rotation runs. */
+const ALL = new Set(CURRICULUM);
 
 const CFG = DEFAULT_CONFIG;
 let seq = 0;
@@ -114,13 +119,13 @@ describe('suggestions', () => {
     expect(focusOfDay(14356)).toBe('posture'); // 14356 % 3 = 1
     expect(focusOfDay(14357)).toBe('tabata');
     expect(focusOfDay(14358)).toBe('rope');
-    expect(suggestDay(14356, [], CFG)[0]).toMatchObject({ routineId: POSTURE_ROUTINE_ID, targets: { hangSeconds: 25 } });
-    expect(suggestDay(14357, [], CFG)[0]).toMatchObject({ routineId: TABATA_ROUTINE_ID, targets: { rounds: 2 } });
-    expect(suggestDay(14358, [], CFG)[0]).toMatchObject({ routineId: ROPE_ROUTINE_ID, targets: { ropeTurns: 150 } });
+    expect(suggestDay(14356, [], CFG, ALL)[0]).toMatchObject({ routineId: POSTURE_ROUTINE_ID, targets: { hangSeconds: 25 } });
+    expect(suggestDay(14357, [], CFG, ALL)[0]).toMatchObject({ routineId: TABATA_ROUTINE_ID, targets: { rounds: 2 } });
+    expect(suggestDay(14358, [], CFG, ALL)[0]).toMatchObject({ routineId: ROPE_ROUTINE_ID, targets: { ropeTurns: 150 } });
   });
 
   it('adds 2 mood checks and 1 drill and is a valid plan', () => {
-    const items = suggestDay(14357, [], CFG);
+    const items = suggestDay(14357, [], CFG, ALL);
     expect(items.slice(1)).toEqual([
       { id: '14357-1', kind: 'mood', count: 2 },
       { id: '14357-2', kind: 'drill', count: 1 },
@@ -142,8 +147,22 @@ describe('suggestions', () => {
 
   it('only sessions that ended before the day inform its suggestion', () => {
     const start = dayStartUnix(14356, CFG);
-    expect(suggestDay(14356, [s({ hangSeconds: 60, endUnix: start - 1 })], CFG)[0]).toMatchObject({ targets: { hangSeconds: 62 } });
-    expect(suggestDay(14356, [s({ hangSeconds: 60, endUnix: start })], CFG)[0]).toMatchObject({ targets: { hangSeconds: 25 } });
+    expect(suggestDay(14356, [s({ hangSeconds: 60, endUnix: start - 1 })], CFG, ALL)[0]).toMatchObject({ targets: { hangSeconds: 62 } });
+    expect(suggestDay(14356, [s({ hangSeconds: 60, endUnix: start })], CFG, ALL)[0]).toMatchObject({ targets: { hangSeconds: 25 } });
+  });
+
+  it('while the curriculum runs: next lesson, then a Basics workout of the known prefix (P14)', () => {
+    expect(suggestDay(14356, [], CFG)).toEqual([
+      { id: '14356-0', kind: 'learn', skillId: 'chin-tuck' },
+      { id: '14356-1', kind: 'mood', count: 2 },
+      { id: '14356-2', kind: 'drill', count: 1 },
+    ]);
+    const items = suggestDay(14357, [], CFG, new Set(['chin-tuck', 'jumping-jacks']));
+    expect(items.slice(0, 2)).toEqual([
+      { id: '14357-0', kind: 'learn', skillId: 'door-bar-dead-hang' },
+      { id: '14357-1', kind: 'workout', routineId: basicsId(2), targets: { rounds: 2 } },
+    ]);
+    expect(validatePlanItems(items)).toEqual([]);
   });
 
   it('other routines get their own rounds', () => {

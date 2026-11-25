@@ -20,7 +20,8 @@ Designed from scratch for one user (me) on a Pixel 8. Time is daykeep: `14359` i
 | J7 | Close a missed day (justification) | after a miss | ≤ 30 s |
 | J8 | See how I'm doing | a few times per cycle | glance |
 | J9 | Back up / restore / change settings | rare | — |
-| J10 | Learn an exercise's form | on demand | — |
+| J10 | Look up an exercise's form | on demand | — |
+| J11 | Learn a new exercise (lesson) | ≤ 1 per day while the curriculum runs | ≤ 2 min |
 
 ## 2. Structure
 
@@ -36,7 +37,7 @@ Three destinations (P9: ≤ 4), bottom bar on mobile:
 - **Plan** — J2, J3, routines, template.
 - **Progress** — J8, plus settings & data (J9) behind a gear icon in its header.
 - **Full-screen flows** (no bottom bar): workout, post-workout log, mood check, drill, justification, cycle approval, onboarding.
-- J10 is not a destination: exercise detail opens as a sheet from wherever an exercise appears (P10).
+- J10 is not a destination: exercise detail opens as a sheet from wherever an exercise appears (P10); it reuses the lesson's steps and links to the lesson for review.
 
 ## 3. Day model
 
@@ -56,6 +57,8 @@ unplanned ───────────────────────�
   - Rest item: a timed rest practice (e.g. meditation, silence) of at least the planned duration, run with the rest timer.
   - Mood item: ≥ *n* mood checks logged during day N.
   - Drill item: ≥ *n* drills logged during day N.
+  - Learn item (≤ 1 per day, P14): the lesson for that exercise completed during day N.
+- **Learned before used (P14).** A workout item on day N may only hold exercises whose lesson is planned on a day before N (or was logged before N.0000). The cycle editor refuses to approve a day that breaks this.
 - **Missed** → justification required (J7); then streak rules apply (brief → Reserves): protected if a reserve is held and day N−1 was not missed; otherwise the streak breaks.
 - Extra activity (an unplanned workout, a 4th mood check) is logged and counts toward records and history, never toward or against "done".
 - Streak, reserves and the 100-day average are **derived** from the stored records by one pure function — never stored as counters (today's code stores counters and shows stale streaks after missed days).
@@ -185,7 +188,7 @@ Entry: a card on Today from 3 days before the next cycle starts, and Plan → "N
 └───────────────────────────────────┘
 ```
 
-- Primary action = the next undone item, in order: workout first in the morning, otherwise top of list. Priority override: pending justification (J7) blocks; next cycle unapproved and starting within 1 day → primary after today's items are done.
+- Primary action = the next undone item, in order: a due lesson first, then the workout in the morning, otherwise top of list. Priority override: pending justification (J7) blocks; next cycle unapproved and starting within 1 day → primary after today's items are done.
 - Tapping a workout row opens a preview sheet (exercises, intervals, "How?" per exercise).
 
 **Workout HUD** (P12)
@@ -304,6 +307,31 @@ Blocks Today on the first open after a missed day, before anything else.
 
 - The 10×10 grid *is* the 100-day average made visible; each row is a cycle and lines up with day numbers.
 
+### J11 — Learn a new exercise (P14)
+
+Opens from the Today row "Learn · Downward dog" (`learn:<itemId>`), or for review from "How?" anywhere (`lesson:<skillId>`, logs nothing).
+
+```
+┌───────────────────────────────────┐
+│ ✕  Downward dog        Step 2 of 4│
+├───────────────────────────────────┤
+│ ┌───────────────────────────────┐ │
+│ │                               │ │
+│ │        (picture · side)       │ │
+│ │                               │ │
+│ └───────────────────────────────┘ │
+│        [ Side ] [ Front ]         │  ← only when a step has several angles
+│ Push the floor away; hips go up   │
+│ and back.                         │
+├───────────────────────────────────┤
+│ [ Back ]  [        Next        ]  │
+└───────────────────────────────────┘
+```
+
+- A combination starts with "Built from: Plank · Downward dog" (each opens its review lesson).
+- The last step is a short try ("Try it 3 times, slowly"), then **Learned** logs the lesson and ticks the item.
+- Untimed: a lesson is reading and trying at your own pace, not a timed flow.
+
 ### J9 — Settings (gear on Progress)
 
 Sections: **Day** (epoch, day length — changing them warns that history is re-bucketed) · **Anchor** · **Coach** (beeps, voice) · **Template** · **Routines** (custom builder) · **Data** (export / import JSON, Google Drive backup & restore, last backup stamp) · **Reset** (replay onboarding, erase data).
@@ -313,6 +341,7 @@ Sections: **Day** (epoch, day length — changing them warns that history is re-
 | Event | Treatment |
 |---|---|
 | Item done | Inline tick, light haptic-style motion (≤ 300 ms) |
+| Lesson done | Inline tick (same as an item) |
 | Day done | Full-screen, ≤ 2 s, tap to dismiss; occasional rare variant |
 | Recovery day done | Day-done + "Back on track" |
 | Cycle done 10/10 | Cycle row fills in an animation on next open |
@@ -326,7 +355,8 @@ New versioned keys; existing data is discarded (brief).
 - `settings` — epoch, dayLength, anchor, sound, voice, drive config.
 - `template` — 10 day slots.
 - `cycles` — per cycle: approvedAt stamp, on time (bool).
-- `plans` — per day: non-empty list of items (workout{routineId, targets} ×n, rest{kind, durationSeconds} ×n, mood{count}, drill{count}).
+- `plans` — per day: non-empty list of items (workout{routineId, targets} ×n, rest{kind, durationSeconds} ×n, mood{count}, drill{count}, learn{skillId} ≤ 1).
+- `lessons` — completed lessons: skill, stamp.
 - `sessions`, `rests`, `moods`, `drills` — logs with second-precision stamps (seconds since epoch).
 - `justifications` — per missed day: chip, sentence, stamp.
 - `routines` — custom routines.
@@ -339,3 +369,4 @@ Derived (pure functions, unit-tested): day state, streak, reserves, 100-day aver
 1. Empty plans are invalid; resting is a planned, timed item (day 14359).
 2. A day can hold several workout items.
 3. A session ended early never satisfies an item; a retry must be the full session.
+4. Exercises are introduced one per day through lessons planned the day before first use; a missed lesson is a missed day and doesn't re-plan the following days (day 14365, P14).

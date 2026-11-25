@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Design docs
 
 Read them before touching UI or domain code:
-[00-brief](docs/design/00-brief.md) · [01-principles](docs/design/01-principles.md) (P1–P13, each with a check) · [02-workflows](docs/design/02-workflows.md) (screens) · [03-tooling](docs/design/03-tooling.md) (this loop).
+[00-brief](docs/design/00-brief.md) · [01-principles](docs/design/01-principles.md) (P1–P14, each with a check) · [02-workflows](docs/design/02-workflows.md) (screens) · [03-tooling](docs/design/03-tooling.md) (this loop) · [04-curriculum](docs/design/04-curriculum.md) (lesson order and content).
 
 **The loop** (03-tooling §3):
 1. Edit → `npm run check` → fix until it passes (text only).
@@ -20,7 +20,7 @@ Read them before touching UI or domain code:
 - English only; no i18n.
 - After an intended visual change, update the baselines (below) and look at the diff before committing them.
 
-**Scenarios** (`src/dev/scenarios.ts`, dev builds only): `?scenario=<name>&now=<daykeep stamp>` replaces localStorage with the scenario's `storage` and moves the clock (`src/time/clock.ts`; all time reads go through `nowUnix()`). An optional `screen` field is passed as `&screen=<value>` to open a given screen. Flows take `:` arguments (`cycle:1436`, `day-edit:14362`, `day-edit:14362:blank`, `preview:<itemId>` = workout preview sheet over Today, `mood:more` = mood check with "More" open); `onboard-day|anchor|plan` opens an onboarding step. `shots`, `check:ux` and the visual baselines run every registered scenario automatically, in light and dark at 412×915 (Pixel 8). Fixtures mark the last closed cycle's clean-cycle moment as already shown (`cleanCycleDue: true` to see it, as in `clean-cycle`).
+**Scenarios** (`src/dev/scenarios.ts`, dev builds only): `?scenario=<name>&now=<daykeep stamp>` replaces localStorage with the scenario's `storage` and moves the clock (`src/time/clock.ts`; all time reads go through `nowUnix()`). An optional `screen` field is passed as `&screen=<value>` to open a given screen. Flows take `:` arguments (`cycle:1436`, `day-edit:14362`, `day-edit:14362:blank`, `preview:<itemId>` = workout preview sheet over Today, `mood:more` = mood check with "More" open, `learn:<itemId>[:<step>]` = a planned lesson, `lesson:<exerciseId>[:<step>]` = a lesson for review; steps are 1-based); `onboard-day|anchor|plan` opens an onboarding step. `shots`, `check:ux` and the visual baselines run every registered scenario automatically, in light and dark at 412×915 (Pixel 8). Fixtures mark the last closed cycle's clean-cycle moment as already shown (`cleanCycleDue: true` to see it, as in `clean-cycle`). Fixtures default to a graduated user (every lesson logged on the setup day, so plans follow the routine rotation); `curriculum: true` plans from the first lesson.
 
 **DOM contract** (`tests/ux/helpers/rules.ts`; rules apply only to markup inside `data-screen`):
 - `data-screen="<name>"` on each new screen root; per-screen rules and axe (WCAG 2.2 AA incl. contrast and target-size) are scoped to it. Scenarios without one are reported as skipped.
@@ -30,6 +30,7 @@ Read them before touching UI or domain code:
 - `data-streak` must sit in a `data-stats` container that also shows `data-average` (P6). `data-reserves` (UI copy: "streak protection", never "reserve") is optional and never shown on Today; no copy predicts protection before a day closes.
 - `data-target-input` (numeric target field) must sit in a `data-target` container with a visible, non-empty `data-last-hint` ("last 38 s · suggested 40 s" or "no data yet") (P3).
 - `data-screen="justify"`: visible text never matches `/\byou (failed|missed|didn'?t)\b/i`, and the screen has a `data-adjust-link` to edit the next days (P8).
+- `data-screen="lesson"`: exactly one visible `data-step-image` (the step's picture or its placeholder) (P14).
 - Text blocks in a screen render ≤ 2 lines unless inside `data-disclosure` or `data-allow-long` (P10).
 - Speech/beep spy for workout tests: `installSpeechSpy(page)` → `spoken(page)`, `beeps(page)` (`tests/ux/helpers/speech-spy.ts`).
 
@@ -62,8 +63,8 @@ Deployment: pushing to `main` triggers `.github/workflows/deploy.yml` (npm ci �
 Maçã Verde is a client-only React 19 + TypeScript + Tailwind 3 app: a daily plan of short workouts (jump rope, door pull-up bar), rest practices, mood checks and pause drills, approved in 10-day cycles. No backend, no router. Pure logic lives outside React and is unit-tested with Vitest (`*.test.ts` next to it).
 
 - `src/time/` — daykeep port (day numbers, stamps, durations; golden vectors) and the injectable clock: all time reads go through `nowUnix()`/`nowMs()`. `seconds.ts` formats single activities in seconds.
-- `src/domain/` — types (`types.ts`, incl. the content types), plans and cycle approval/locking (`plan.ts`), the record (`record.ts`: day status, streak, streak protection, 100-day average — all derived, never stored), the overload engine and suggestions (`engine.ts`).
-- `src/data/` — built-in content in English: exercises, routines, provocation scenarios.
+- `src/domain/` — types (`types.ts`, incl. the content types), plans and cycle approval/locking (`plan.ts`), the record (`record.ts`: day status, streak, streak protection, 100-day average — all derived, never stored), the overload engine and suggestions (`engine.ts`), the curriculum (`curriculum.ts`: what's learned before a day, generated `basics:<n>` workouts).
+- `src/data/` — built-in content in English: exercises, routines, lessons and their order (`lessons.ts`, from docs/design/04-curriculum.md), provocation scenarios.
 - `src/storage/` — `AppData` in localStorage under `mv2:` keys, backup import/export, Google Drive backup (GIS, `drive.file`; client ID in settings) and auto-backup.
 - `src/app/` — `App.tsx` (screen switch), `AppContext` (data, derived record, ticking `now`, `update()` that persists), `nav.tsx` (tab + flow stack; flows are strings like `cycle:1436`), screens in `screens/`, and pure view helpers (`view.ts`, `today.ts`, `cycle.ts`, `progress.ts`, …). Celebrations use the shared `Moment` (≤ 2 s, tap to dismiss).
 - `src/ui/` — small token-only primitives (Button, Sheet, ListRow, StatsBlock…).

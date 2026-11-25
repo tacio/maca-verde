@@ -29,6 +29,8 @@
 import { DEFAULT_CONFIG, cycleOf, formatStamp, fromUnix, type DayConfig } from '../time/daykeep';
 import { cycleDays, dayStartUnix } from '../domain/plan';
 import { findRoutine, suggestDay } from '../domain/engine';
+import { knownBefore } from '../domain/curriculum';
+import { CURRICULUM } from '../data/lessons';
 import type { AppData, DayPlan, PlanItem, WorkoutItem, WorkoutRoutine, WorkoutSession } from '../domain/types';
 import { emptyData, toStorageEntries } from '../storage/store';
 
@@ -44,6 +46,11 @@ export interface FixtureOptions {
   anchor?: string;
   /** Leave the last closed cycle's clean-cycle moment unshown (default: already shown, as after a normal open). */
   cleanCycleDue?: boolean;
+  /**
+   * Plan the record from the first lesson (P14). Default: a graduated user —
+   * every lesson logged on the setup day, so plans follow the routine rotation.
+   */
+  curriculum?: boolean;
 }
 
 export interface Fixture {
@@ -78,9 +85,14 @@ export function buildFixture(opts: FixtureOptions): Fixture {
   data.settings.anchor = opts.anchor ?? 'After coffee';
   if (!opts.cleanCycleDue) data.settings.cleanCycleShown = cycleOf(today) - 1;
 
+  // Lessons: a graduated user learned everything on the setup day.
+  if (!opts.curriculum) {
+    CURRICULUM.forEach((skillId, i) => data.lessons.push({ id: `l-setup-${i}`, skillId, unix: at(recordStart - 1, 0.005) }));
+  }
+
   // Plans and approvals.
   const lastCycle = cycleOf(Math.max(today, recordStart)) + (opts.approveNext ? 1 : 0);
-  const planFor = (d: number): PlanItem[] => suggestDay(d, [], cfg);
+  const planFor = (d: number): PlanItem[] => suggestDay(d, [], cfg, knownBefore(d, data.plans, data.lessons, cfg));
   for (let c = cycleOf(recordStart); c <= lastCycle; c++) {
     const first = Math.max(c * 10, recordStart);
     const approvedUnix = at(first - 1, 0.02);
@@ -117,6 +129,7 @@ function logAll(data: AppData, day: number, items: PlanItem[], span: number, cfg
   let w = 0;
   for (const item of items) {
     if (item.kind === 'workout') addSession(data, day, item, at(0.5 + 0.05 * w), w++);
+    else if (item.kind === 'learn') data.lessons.push({ id: `l-${day}`, skillId: item.skillId, unix: at(0.45) });
     else if (item.kind === 'rest') {
       const end = at(0.95);
       data.rests.push({
@@ -129,7 +142,7 @@ function logAll(data: AppData, day: number, items: PlanItem[], span: number, cfg
       });
     } else if (item.kind === 'mood') {
       for (let i = 0; i < item.count; i++) addMood(data, day, i, at(0.1 + (0.3 * i) / item.count));
-    } else {
+    } else if (item.kind === 'drill') {
       for (let i = 0; i < item.count; i++) {
         data.drills.push({
           id: `d-${day}-${i}`,
@@ -249,6 +262,54 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
   warmup: {
     description: 'Day of setup; the record starts tomorrow',
     fixture: { history: '.', today: TODAY },
+  },
+  'today-learn': {
+    description: 'Curriculum day 1 (P14): only a lesson (chin tuck), mood checks and a drill',
+    fixture: { history: '.T', today: TODAY, curriculum: true },
+  },
+  'today-learn-workout': {
+    description: 'Curriculum day 6: lesson (cobra lift) first, then a Basics workout of the 5 lessons before',
+    fixture: { history: '.' + run(5) + 'T', today: TODAY, curriculum: true },
+  },
+  'lesson-first-step': {
+    description: 'Lesson step 1 of 4 (chin tuck): picture placeholder, one instruction, Next',
+    fixture: { history: '.T', today: TODAY, curriculum: true },
+    screen: `learn:${TODAY}-0`,
+  },
+  'lesson-multi-view': {
+    description: 'Lesson step with two angles (chin tuck, step 3): Side / Front switch',
+    fixture: { history: '.T', today: TODAY, curriculum: true },
+    screen: `learn:${TODAY}-0:3`,
+  },
+  'lesson-last-step': {
+    description: 'Lesson try step (chin tuck, 4 of 4): Back and "Learned"',
+    fixture: { history: '.T', today: TODAY, curriculum: true },
+    screen: `learn:${TODAY}-0:4`,
+  },
+  'lesson-combo': {
+    description: 'A combination lesson (cobra & chin tuck, day 7) starts with "Built from" its parts',
+    fixture: { history: '.' + run(6) + 'T', today: TODAY, curriculum: true },
+    screen: `learn:${TODAY}-0`,
+  },
+  'lesson-review': {
+    description: 'Reviewing a lesson from "How?" (downward dog): last step says Done, logs nothing',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'lesson:downward-dog:4',
+  },
+  'preview-basics': {
+    description: 'Workout preview of a Basics workout during the curriculum, "Open lesson" under How?',
+    fixture: { history: '.' + run(5) + 'T', today: TODAY, curriculum: true },
+    screen: `preview:${TODAY}-1`,
+  },
+  'cycle-curriculum': {
+    description: 'Approving the next cycle mid-curriculum: one lesson a day, Basics growing',
+    fixture: { history: '.' + run(14) + 'M' + run(3) + 'D', today: 14358, curriculum: true },
+    screen: 'cycle',
+  },
+  'day-edit-curriculum': {
+    description: 'Day editor mid-curriculum: lesson card, + Lesson hidden, routines locked until learned',
+    fixture: { history: STANDARD, today: TODAY, curriculum: true },
+    screen: 'day-edit',
   },
   'today-start': {
     description: 'Today at 0%, streak 15',

@@ -7,7 +7,7 @@ Status: approved · day 14359
 A **daily routine I actually follow** for physical and mental health. The redesign exists to make me *want* to open the app every day — not to change the training methodology.
 
 - Priorities: **fat loss** and **emotional control** first; **posture** and **cardio** still matter.
-- The methodology already implemented stays as-is: overload engine and daily challenge rotation, routines, RPE / neck-discomfort check-in, HALT mood check-in, think-before-speak drill.
+- The methodology already implemented stays as-is: overload engine and daily challenge rotation, routines, RPE / neck-discomfort check-in, HALT mood check-in, think-before-speak drill. One revision (day 14365): exercises are now introduced **one at a time**, through lessons, before any workout uses them (see *Gradual introduction* below and [04-curriculum](04-curriculum.md)).
 - Gamification is welcome where it reinforces showing up daily.
 
 ## Success metric
@@ -58,6 +58,22 @@ Reserves must never feel like a budget to use. They are insurance, not currency.
 | Done | 100% of items, numeric targets met or exceeded |
 | Not done | Requires a **written justification**: the first thing the app asks on the next open, before planning or starting the day. Can't be skipped; one sentence is enough |
 | Mood checks / drills | Count per day, no fixed times |
+| Lessons | A plan item that teaches one exercise (see below); done when the lesson is completed that day |
+
+### Gradual introduction (day 14365)
+
+Day 1 of real use showed the problem: a first workout full of moves never seen before ("downward dog", "Y-T-W"), with no vocabulary and no body control for them. Games solve this by introducing one mechanic at a time and letting the first levels be trivially easy. So:
+
+| Rule | Decision |
+|---|---|
+| One new exercise per day | A day holds **at most one lesson** |
+| Taught outside the workout | A lesson is its own plan item: step by step, a picture per step (several angles when needed), then a short try |
+| Lesson the day before | An exercise may appear in a workout only on a day **after** the day its lesson is planned (or a lesson was logged) |
+| Parts before combinations | An exercise built from poses or movements (cobra + chin tuck, plank → down dog, Y + T + W) comes after a lesson for each part |
+| Easy first days | The first days are very simple on purpose: day 1 is only a lesson; the workout grows by one exercise per lesson |
+| Curriculum | The order of lessons and the generated workouts live in [04-curriculum](04-curriculum.md); the built-in routines unlock once all their exercises are learned |
+| Scope | Exercises only. Mood check and pause drill are unchanged |
+| Missed lesson | A missed day like any other. The next days' plans don't change; the lesson stays open for review from the workout preview |
 
 ## Time model: daykeep
 
@@ -108,6 +124,6 @@ Start from scratch: existing history (logs, profile stats, streaks) is discarded
 
 ## Out of scope
 
-- Changing the training/emotional-control methodology or its content.
+- Changing the training/emotional-control methodology or its content (except the gradual introduction above).
 - Multi-user, social, or cloud-sync features beyond the existing Drive backup.
 - Native app packaging.

@@ -22,15 +22,39 @@ export interface Exercise {
   equipment: EquipmentType;
   difficulty: 1 | 2 | 3 | 4 | 5;
   description: string;
-  textNeckCue: string;
-  postureBenefit: string;
-  bellyBurnBenefit: string;
-  cardioBenefit: string;
+  /** Long-form notes from the original library; newer, lesson-taught exercises leave them out. */
+  textNeckCue?: string;
+  postureBenefit?: string;
+  bellyBurnBenefit?: string;
+  cardioBenefit?: string;
   formPoints: string[];
   defaultWorkSeconds: number;
   defaultRestSeconds: number;
   cadenceTip?: string;
-  targetMuscles: string[];
+  targetMuscles?: string[];
+}
+
+/* --- lessons (P14, docs/design/04-curriculum.md) ------------------------- */
+
+/** Camera angles a lesson picture can show. */
+export type LessonView = 'side' | 'front' | 'top';
+
+export interface LessonStep {
+  /** One instruction, ≤ 2 lines on the lesson screen. */
+  text: string;
+  /** Angles this step has a picture for, first = default; never empty. */
+  views: LessonView[];
+  /** Picture per angle; a missing one renders as a labelled placeholder. */
+  images?: Partial<Record<LessonView, string>>;
+}
+
+/** The lesson that introduces one exercise (keyed by exercise id). */
+export interface Lesson {
+  exerciseId: string;
+  /** Exercises this one combines; each has its own earlier lesson. */
+  parts: string[];
+  /** Ends with the "try it" step. */
+  steps: LessonStep[];
 }
 
 export interface WorkoutExerciseItem {
@@ -141,7 +165,15 @@ export interface DrillItem {
   count: number;
 }
 
-export type PlanItem = WorkoutItem | RestItem | MoodItem | DrillItem;
+/** A lesson that introduces one exercise (P14); ≤ 1 per day. */
+export interface LearnItem {
+  id: string;
+  kind: 'learn';
+  /** Exercise id the lesson teaches. */
+  skillId: string;
+}
+
+export type PlanItem = WorkoutItem | RestItem | MoodItem | DrillItem | LearnItem;
 export type PlanItemKind = PlanItem['kind'];
 
 export interface DayPlan {
@@ -216,6 +248,13 @@ export interface DrillLog {
   reflection?: string;
 }
 
+/** A completed lesson; belongs to the day of its `unix`. */
+export interface LessonLog {
+  id: string;
+  skillId: string;
+  unix: number;
+}
+
 export type JustificationReason = 'plan_too_big' | 'time' | 'energy' | 'pain' | 'forgot' | 'other';
 export const JUSTIFICATION_REASONS: readonly JustificationReason[] = [
   'plan_too_big',
@@ -245,6 +284,8 @@ export interface AppData {
   moods: MoodCheck[];
   drills: DrillLog[];
   justifications: Justification[];
+  /** Completed lessons (P14). */
+  lessons: LessonLog[];
   /** Custom routines (built-ins live in src/data/routines.ts). */
   routines: WorkoutRoutine[];
 }
@@ -252,5 +293,5 @@ export interface AppData {
 /** The parts of AppData the record is derived from. */
 export type RecordData = Pick<
   AppData,
-  'cycles' | 'plans' | 'sessions' | 'rests' | 'moods' | 'drills' | 'justifications'
+  'cycles' | 'plans' | 'sessions' | 'rests' | 'moods' | 'drills' | 'justifications' | 'lessons'
 >;
