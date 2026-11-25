@@ -49,6 +49,7 @@ class Figure:
             for c in list(o.users_collection):
                 c.objects.unlink(o)
             coll.objects.link(o)
+        self.props = []
         self._show_eyes()
         self.reset()
 
@@ -66,6 +67,9 @@ class Figure:
     # --- posing ------------------------------------------------------------
 
     def reset(self):
+        for o in self.props:
+            bpy.data.objects.remove(o)
+        self.props = []
         for pb in self.rig.pose.bones:
             pb.matrix_basis = Matrix()
         self.rig.location = (0, 0, 0)
@@ -111,6 +115,18 @@ class Figure:
         n.translation = m.translation
         pb.matrix = n
 
+    def roll(self, bone, deg):
+        """Twist a bone about its own long axis (forearm pronation), keeping its position."""
+        self.update()
+        pb = self.rig.pose.bones[bone]
+        mw3 = self.rig.matrix_world.to_3x3().normalized()
+        m = pb.matrix.copy()
+        axis = (mw3 @ m.to_3x3().normalized() @ Vector((0, 1, 0))).normalized()
+        r = mw3.inverted() @ Matrix.Rotation(math.radians(deg), 3, axis) @ mw3
+        n = (r @ m.to_3x3()).to_4x4()
+        n.translation = m.translation
+        pb.matrix = n
+
     def world_rot(self, bone):
         self.update()
         return self.rig.matrix_world.to_3x3().normalized() @ self.rig.pose.bones[bone].matrix.to_3x3().normalized()
@@ -130,6 +146,16 @@ class Figure:
         ev.to_mesh_clear()
         return pts
 
+    def prop_points(self):
+        dg = bpy.context.evaluated_depsgraph_get()
+        pts = []
+        for o in self.props:
+            ev = o.evaluated_get(dg)
+            me = ev.to_mesh()
+            pts += [ev.matrix_world @ v.co for v in me.vertices]
+            ev.to_mesh_clear()
+        return pts
+
     def ground(self):
         """Drop the figure so its lowest point touches the floor (z = 0)."""
         mz = min(pt.z for pt in self.points())
@@ -140,9 +166,43 @@ class Figure:
         pts = self.points()
         if above is not None:
             pts = [p for p in pts if p.z >= above]
+        else:
+            pts += self.prop_points()  # frame the props too
         lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
         hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
         return lo, hi
+
+
+def add_prop(fig, obj):
+    """Link a prop into the figure's collection so Freestyle outlines it; reset() removes it."""
+    for c in list(obj.users_collection):
+        c.objects.unlink(obj)
+    fig.coll.objects.link(obj)
+    fig.props.append(obj)
+    return obj
+
+
+def add_bar(fig, centre, half=0.45, radius=0.016):
+    """Door pull-up bar: a thin cylinder along X (width of the door frame)."""
+    bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=2 * half, vertices=24,
+                                        location=tuple(centre), rotation=(0, math.pi / 2, 0))
+    return add_prop(fig, bpy.context.active_object)
+
+
+def add_rope(fig, points, radius=0.005):
+    """Jump rope: a bevelled curve through world `points` (smooth Bezier)."""
+    cu = bpy.data.curves.new('rope', 'CURVE')
+    cu.dimensions = '3D'
+    cu.bevel_depth = radius
+    cu.bevel_resolution = 2
+    sp = cu.splines.new('BEZIER')
+    sp.bezier_points.add(len(points) - 1)
+    for bp, pt in zip(sp.bezier_points, points):
+        bp.co = pt
+        bp.handle_left_type = bp.handle_right_type = 'AUTO'
+    ob = bpy.data.objects.new('rope', cu)
+    bpy.context.scene.collection.objects.link(ob)
+    return add_prop(fig, ob)
 
 
 def top_profile(fig, y, half=0.04, up=Vector((0, 0, 1))):

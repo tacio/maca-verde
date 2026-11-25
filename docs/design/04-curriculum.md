@@ -246,5 +246,5 @@ Code: `src/data/lessons.ts` (generated from §2–§3), `src/domain/curriculum.t
 
 ## 5. Open for later
 
-- Real pictures for every step and angle (placeholders ship first).
+- Real pictures for every step and angle (placeholders ship first). In progress: generated outline drawings, see [art/README.md](../../art/README.md#status-and-pending) (6 of 28 lessons drawn, not yet in the app). Proposed view changes from that work, awaiting approval: cobra lift step 2 front → top (thumbs unreadable from the head end); rope bounce steps 3–4 side → front (from the side the rope reads as a stick).
 - Whether Basics should switch to the 3-way rotation earlier (e.g. once 6 exercises are known).

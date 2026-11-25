@@ -32,6 +32,23 @@ SHOTS = [
     ('high-plank', 2, 'side', 'high-plank'),
     ('high-plank', 3, 'side', 'high-plank'),
     ('high-plank', 4, 'side', 'high-plank'),
+    ('jumping-jacks', 1, 'front', 'jj-stand'),
+    ('jumping-jacks', 2, 'front', 'jj-arms', {'ghost': 'jj-stand'}),
+    ('jumping-jacks', 3, 'front', 'jj-feet', {'ghost': 'jj-stand'}),
+    ('jumping-jacks', 4, 'front', 'jj-both', {'ghost': 'jj-stand'}),
+    ('jumping-jacks', 5, 'front', 'jj-land'),
+    ('door-bar-dead-hang', 1, 'front', 'dead-hang'),
+    ('door-bar-dead-hang', 2, 'side', 'hang-passive'),
+    ('door-bar-dead-hang', 3, 'side', 'dead-hang', {'ghost': 'hang-passive'}),
+    ('door-bar-dead-hang', 4, 'side', 'dead-hang'),
+    ('rope-bounce', 1, 'front', 'rope-ready'),
+    ('rope-bounce', 2, 'side', 'rope-wrists', {'ghost': 'rope-ready'}),
+    ('rope-bounce', 3, 'side', 'rope-hop'),
+    ('rope-bounce', 4, 'side', 'rope-hop'),
+    ('cobra-lift', 1, 'side', 'cobra-flat'),
+    ('cobra-lift', 2, 'front', 'cobra-thumbs'),
+    ('cobra-lift', 3, 'side', 'cobra-lift', {'ghost': 'cobra-thumbs'}),
+    ('cobra-lift', 4, 'side', 'cobra-lift'),
 ]
 
 
