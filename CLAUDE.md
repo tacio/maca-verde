@@ -48,6 +48,7 @@ npm run vectors      # regenerate daykeep golden vectors (needs local daykeep bi
 npm run build        # tsc -b && vite build → dist/
 npm run preview      # serve the production build
 npm run icons        # re-render public/icon-*.png and apple-touch-icon.png from public/icon.svg
+blender -b --python art/render.py -- [lesson…]   # lesson pictures → art/out/ (art/README.md)
 ```
 
 Playwright uses its cached Chromium (`@playwright/test` pinned to 1.56.x); don't download browsers locally. `shots/`, `test-results/` are gitignored.

@@ -27,3 +27,5 @@ dist-ssr
 shots/
 test-results/
 playwright-report/
+art/out/
+__pycache__/
