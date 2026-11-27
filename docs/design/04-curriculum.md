@@ -36,7 +36,7 @@ Jumping jacks combine an arm swing and a foot hop. Neither is an exercise of its
 - **One lesson per day.** Lesson *k* is planned on the *k*-th curriculum day.
 - **Lesson before use.** An exercise enters workouts only from the day after its lesson.
 - **Parts first.** A combination's parts (in brackets below) each have an earlier lesson.
-- **Pictures.** Each step has a picture slot per angle listed (side / front / top). They ship as labelled placeholders for now; real images drop in without changing the data.
+- **Pictures.** Each step has a picture slot per angle listed (side / front / top / diagonal: front-side, seen from slightly above). They ship as labelled placeholders for now; real images drop in without changing the data.
 - **Missed lesson.** The day is missed, like any other day. Later plans stay as approved; the lesson stays reachable from the workout preview for review.
 
 ## 2. Order
@@ -101,14 +101,14 @@ Steps are what the lesson screen shows, one per screen, ≤ 2 lines each. The la
    2. Step your feet back; body in one straight line from head to heels. *(side)*
    3. Squeeze glutes and belly; don't let the hips sag or spike. *(side)*
    4. Try a 10 s hold.
-5. **Rope bounce** — side, front
+5. **Rope bounce** — front, diagonal
    1. Handles at hip height, elbows close to your ribs. *(front)*
-   2. Turn the rope with your wrists, not your arms. *(side)*
-   3. Hop on the balls of both feet, 1–2 cm off the floor. *(side)*
-   4. Try 10 jumps. Tripping is normal: just restart.
-6. **Cobra lift** — side, front
+   2. Turn the rope with your wrists, not your arms. *(diagonal)*
+   3. Hop on the balls of both feet, 1–2 cm off the floor. *(diagonal)*
+   4. Try 10 jumps. Tripping is normal: just restart. *(diagonal)*
+6. **Cobra lift** — side
    1. Lie face down, arms by your sides, palms down. *(side)*
-   2. Turn your thumbs up toward the ceiling. *(front)*
+   2. Turn your thumbs up toward the ceiling. *(side, close-up of the hand)*
    3. Lift your chest a few cm, eyes on the floor. *(side)*
    4. Try 3 lifts with a 3 s hold.
 7. **Cobra & chin tuck** — side · built from: cobra lift, chin tuck
@@ -121,10 +121,10 @@ Steps are what the lesson screen shows, one per screen, ≤ 2 lines each. The la
    2. Run in place, lifting each knee to hip height. *(side)*
    3. Land on the balls of your feet; arms swing naturally. *(front)*
    4. Try 20 steps.
-9. **Downward dog** — side, front
+9. **Downward dog** — side, diagonal
    1. Start on hands and knees. *(side)*
    2. Tuck your toes and lift your knees off the floor. *(side)*
-   3. Push the floor away; hips go up and back, head hangs loose. *(side, front)*
+   3. Push the floor away; hips go up and back, head hangs loose. *(side, diagonal)*
    4. Heels toward the floor (they needn't touch). Try a 10 s hold.
 10. **Scapular pulls** — side, front · built from: dead hang
     1. Start in a dead hang, arms straight. *(front)*

@@ -25,27 +25,28 @@ Setup: Blender ≥ 5.1 on PATH with the MPFB and Freestyle SVG Exporter extensio
 
 ## Status and pending
 
-As of 2026-11-25 (day 14365). The app still shows placeholders: no picture is wired in yet.
+As of 2026-11-27 (day 14367). The app still shows placeholders: no picture is wired in yet.
 
 **Drawn** (all checks pass; `art/out/`, regenerate with the command above):
-chin-tuck, high-plank, jumping-jacks, door-bar-dead-hang, rope-bounce, cobra-lift.
+chin-tuck, high-plank, jumping-jacks, door-bar-dead-hang, rope-bounce, cobra-lift,
+chin-tuck-cobra-hold, high-knees, downward-dog, door-bar-scapular-pull.
 
-**Reviewed, needs rework:**
-- cobra-lift step 2 (`front`): from the head end the thumbs can't be read. Proposed: view → `top`.
-- rope-bounce steps 3–4 (`side`): the rope under the feet collapses into a straight line and
-  reads as a walking stick. Proposed: view → `front`. Step 2 (`side`): the rope arc is cropped
-  at the top; fix the framing.
-- View changes are lesson content: edit docs/design/04-curriculum.md §3 first (user approval),
-  then `src/data/lessons.ts`, then re-render.
-- Weak but acceptable: dead hang active vs passive is subtle from the side; jumping-jacks step 5
-  heel lift barely visible from the front.
+Views: `side`, `front`, `top` and `diagonal` (front-left, ~20° above; no floor line, since a
+tilted floor isn't a line). Use `diagonal` when depth matters: a rope loop collapses into a
+line from the side. Frames: `full`, `upper`, `hand` (close-up of the near hand, e.g. thumbs).
+View changes are lesson content: edit docs/design/04-curriculum.md §3 first (user approval),
+then `src/data/lessons.ts`, then re-render.
 
-**Not drawn yet** (22, ids in curriculum order; batches of 3–5 with the `lesson-artist` agent,
+**Weak but accepted:** dead hang active vs passive is subtle from the side; jumping-jacks step 5
+heel lift barely visible from the front; cobra & chin tuck relies on the step-2 ghost;
+high-knees step 3 (front) foreshortens the arm swing; downward-dog's hanging head reads as a
+rounded mass; scapular pulls show "down" but not "back".
+
+**Not drawn yet** (18, ids in curriculum order; batches of 3–5 with the `lesson-artist` agent,
 `.claude/agents/lesson-artist.md`, method in `.claude/skills/lesson-pictures/SKILL.md`):
-`chin-tuck-cobra-hold`, `high-knees`, `downward-dog`, `door-bar-scapular-pull`, `rope-boxer-skip-hiit`, `squat`, `plank-to-downdog`, `sprawl`, `mountain-climber-sprints`, `hollow-tuck`, `prone-y`, `prone-t`, `prone-w`, `prone-ytw-raises`, `rope-high-knees-burn`, `door-bar-hanging-knees`, `plank-downdog-toe-tap`, `hollow-hold`, `hollow-body-hold-tuck`, `door-bar-isometric-lock`, `sprawl-burpee-blast`, `rope-speed-sprint-tabata`.
-Expect ~1 h and
-~150k Sonnet tokens per batch of 4; the main session reviews each batch's contact sheets
-(`art/out/prev-<lesson>.png`) against the cues before the next.
+`rope-boxer-skip-hiit`, `squat`, `plank-to-downdog`, `sprawl`, `mountain-climber-sprints`, `hollow-tuck`, `prone-y`, `prone-t`, `prone-w`, `prone-ytw-raises`, `rope-high-knees-burn`, `door-bar-hanging-knees`, `plank-downdog-toe-tap`, `hollow-hold`, `hollow-body-hold-tuck`, `door-bar-isometric-lock`, `sprawl-burpee-blast`, `rope-speed-sprint-tabata`.
+Expect ~1.5 h and ~125k Sonnet tokens per batch of 4; the main session reviews each batch's
+contact sheets (`art/out/prev-<lesson>.png`) against the cues before the next.
 
 **Wiring into the app** (after the drawings): an `<img>` can't inherit `currentColor`, so
 draw each SVG as a CSS mask (`mask-image: url(…)` on an element with a token background,

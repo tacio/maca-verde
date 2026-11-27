@@ -208,7 +208,7 @@ def _palm_sign(fig):
     return 1 if _palm(fig, 'L').z < 0 else -1
 
 
-def _hang(fig, active, grip=0.1, roll=0.0, bar_z=None):
+def _hang(fig, active, grip=0.1, roll=0.0, bar_z=None, shrug=None):
     """Hanging from a bar; returns the bar. `active`: shoulders pulled down; else shrugged."""
     fig.reset()
     for s, sx in SIDES:
@@ -218,7 +218,7 @@ def _hang(fig, active, grip=0.1, roll=0.0, bar_z=None):
             fig.aim(t, fig.body((0, -0.4, -1)))
         for b in (f'clavicle.{s}', f'shoulder01.{s}'):
             rest = (fig.p(b, True) - fig.p(b)).normalized()
-            fig.aim(b, (rest + fig.body((0, 0, 1)) * (0.15 if active else 0.9)).normalized())
+            fig.aim(b, (rest + fig.body((0, 0, 1)) * (shrug if shrug is not None else (0.15 if active else 0.9))).normalized())
         up = fig.body((sx * grip, 0, 1))
         fig.aim_chain(side_bones(fig, ARM, s), up)
         fig.aim(f'wrist.{s}', up)
@@ -497,6 +497,21 @@ def _best_prone_roll(fig, toward):
     ROLL[0] = _ROLLS[key]
 
 
+def _thumbs_up(fig):
+    """Loose fists with the thumbs pointing at the ceiling; returns the lowest thumb z (unit)."""
+    ups = []
+    for s, _ in SIDES:
+        n = _palm(fig, s) * _PALM_SIGN[0]
+        d = (fig.p(f'finger3-1.{s}') - fig.p(f'wrist.{s}')).normalized()
+        for f in range(2, 6):  # fingers curl toward the palm side
+            fig.aim(f'finger{f}-1.{s}', (d * 0.3 + n).normalized())
+            fig.aim(f'finger{f}-2.{s}', (-d + n * 0.3).normalized())
+            fig.aim(f'finger{f}-3.{s}', (-d - n * 0.6).normalized())
+        fig.aim_chain([f'finger1-{i}.{s}' for i in (1, 2, 3)], Vector((0, 0, 1)))
+        ups.append((fig.p(f'finger1-3.{s}', True) - fig.p(f'finger1-2.{s}')).normalized().z)
+    return min(ups)
+
+
 def _cobra(fig, lift, thumbs):
     _best_prone_roll(fig, Vector((-1, 0, 0.3)) if thumbs else Vector((0, 0, -1)))
     _prone(fig, 0, ROLL[0])
@@ -508,7 +523,9 @@ def _cobra(fig, lift, thumbs):
     out = {}
     palm = _palm(fig, 'L') * _PALM_SIGN[0]
     if thumbs:
+        up = _thumbs_up(fig)
         out['thumbs up: palm faces inwards (x)'] = (round(-palm.x, 2), -palm.x > 0.6)
+        out['thumb points at the ceiling (z)'] = (round(up, 2), up > 0.8)
     else:
         out['palm faces down (z)'] = (round(-palm.z, 2), -palm.z > 0.6)
     out['belly down: lowest point (cm)'] = (round(min(p.z for p in pts) * 100, 1), True)
@@ -541,8 +558,316 @@ def cobra_lift(fig):
     return _cobra(fig, 20, True)
 
 
+
+# --- cobra & chin tuck -------------------------------------------------------------
+
+def cobra_tuck(fig):
+    """Cobra lift plus a chin tuck: head slid back along the line of the chest, eyes down."""
+    cobra_lift(fig)
+    head_rot = fig.world_rot('head')
+    before = fig.p('head', True)
+    # neck steepens just enough to slide the head back ~3 cm (a rigid neck lifts it a little too)
+    for extra in range(0, 41):
+        a = math.radians(22 + extra)
+        fig.aim_chain(NECK, Vector((0, -math.cos(a), math.sin(a))))
+        fig.keep_world_rotation('head', head_rot)
+        if fig.p('head', True).y - before.y >= 0.03:
+            break
+    after = fig.p('head', True)
+    back = after.y - before.y
+    drop = before.z - after.z
+    tilt = math.degrees(fig.world_rot('head').to_quaternion().rotation_difference(head_rot.to_quaternion()).angle)
+    chest = _elev(fig.p('spine01', True) - fig.p('spine01'))
+    he = _elev(fig.p('head', True) - fig.p('head'))
+    pts = fig.points()
+    return {
+        'head moved back (cm)': (round(back * 100, 1), 2.0 <= back * 100 <= 6.0),
+        'head rose (cm)': (round(-drop * 100, 1), -drop * 100 < 4.5),
+        'head tilt change (°)': (round(tilt, 1), tilt < 2),
+        'head vs chest elevation (°)': (round(he - chest, 1), he - chest < 8),
+        'lowest point (cm)': (round(min(p.z for p in pts) * 100, 1), min(p.z for p in pts) > -0.01),
+    }
+
+
+# --- high knees --------------------------------------------------------------------
+
+def _low_near(fig, pt, r):
+    """Lowest mesh height within r of a point (contact of a hand, knee or foot with the floor)."""
+    return min((q.z for q in fig.points() if (q - pt).length < r), default=float('nan'))
+
+
+def _hk(fig, knee_up):
+    fig.reset()
+    # left knee lifted (thigh forward), right leg stands on the ball of the foot
+    for s, sx in SIDES:
+        lift = knee_up and s == 'L'
+        if lift:
+            fig.aim_chain(side_bones(fig, LEG[:2], s), fig.body((sx * 0.03, -1, -0.05)))
+            fig.aim_chain(side_bones(fig, LEG[2:], s), fig.body((sx * 0.03, -0.25, -1)))
+            fig.aim(f'foot.{s}', fig.body((0, -0.4, -1)))
+            for t in side_bones(fig, TOES, s):
+                fig.aim(t, fig.body((0, -0.4, -1)))
+        else:
+            fig.aim_chain(side_bones(fig, LEG, s), fig.body((sx * 0.03, 0, -1)))
+            fig.aim(f'foot.{s}', fig.body((0, -0.5, -1)))  # heel up
+            for t in side_bones(fig, TOES, s):
+                fig.aim(t, fig.body((0, -1, 0)))
+        # arms: bent at the elbow; opposite arm to the lifted knee swings forward
+        fwd = (s == 'R') if knee_up else None
+        if fwd is None:
+            _arms = fig.body((sx * 0.12, 0, -1))
+            fig.aim_chain(side_bones(fig, ARM[:2], s), _arms)
+            fig.aim_chain(side_bones(fig, ARM[2:], s), fig.body((sx * 0.06, -0.06, -1)))
+        else:
+            ua = fig.body((sx * 0.1, -0.7 if fwd else 0.6, -1))
+            fig.aim_chain(side_bones(fig, ARM[:2], s), ua)
+            fa = fig.body((sx * 0.1, -1 if fwd else -0.2, 0.25 if fwd else -0.9))
+            fig.aim_chain(side_bones(fig, ARM[2:], s), fa)
+            fig.aim(f'wrist.{s}', fa)
+    fig.ground()
+
+
+def high_knees_up(fig):
+    """Running in place: left knee to hip height, standing heel up, arms bent and swinging."""
+    _hk(fig, True)
+    hip, knee = fig.p('upperleg01.L'), fig.p('lowerleg01.L')
+    st = fig.p('upperleg01.R'), fig.p('lowerleg01.R'), fig.p('foot.R')
+    knee_dz = knee.z - hip.z
+    trunk = math.degrees((fig.p('neck01') - fig.p('spine05')).angle(Vector((0, 0, 1))))
+    stand_leg = angle(*st)
+    pts = fig.points()
+    heel = fig.p('foot.R').z
+    toe = min(fig.p(f'toe3-3.{s}', True).z for s, _ in SIDES)
+    elbow = angle(fig.p('upperarm01.R'), fig.p('lowerarm01.R'), fig.p('wrist.R'))
+    return {
+        'knee vs hip height (cm)': (round(knee_dz * 100, 1), abs(knee_dz) < 0.08),
+        'trunk lean from vertical (°)': (round(trunk, 1), trunk < 10),
+        'standing leg straight (knee °)': (round(stand_leg, 1), stand_leg > 165),
+        'standing heel above toes (cm)': (round((heel - toe) * 100, 1), 3 < (heel - toe) * 100 < 14),
+        'arm bend (elbow °)': (round(elbow, 1), 60 < elbow < 120),
+        'arms swing opposite (y)': (round((fig.p('wrist.R').y - fig.p('wrist.L').y) * 100, 1),
+                                    fig.p('wrist.R').y < fig.p('wrist.L').y - 0.15),
+        'lifted foot clear of floor (cm)': (round((fig.p('foot.L').z - toe) * 100, 1), fig.p('foot.L').z - toe > 0.15),
+    }
+
+
+# --- downward dog ------------------------------------------------------------------
+
+def _dog(fig, trunk_deg, arm_deg, thigh, shin, knee_gap=None, toes='flat', head='loose'):
+    """Quadruped-family pose built in world space.
+
+    trunk_deg / arm_deg: direction hips→head and shoulder→wrist, degrees below horizontal
+    (towards −Y). thigh / shin: world directions (unit-ish) of hip→knee and knee→ankle.
+    """
+    fig.reset()
+    ta = math.radians(trunk_deg)
+    tdir = Vector((0, -math.cos(ta), -math.sin(ta)))
+    fig.turn(90 + trunk_deg)  # body up-axis along the trunk, head towards −Y
+    up = fig.body((0, 0, 1))
+    fig.aim_chain(SPINE, up)
+    fig.aim_chain(NECK + ['head'], up)
+    aa = math.radians(arm_deg)
+    adir = Vector((0, -math.cos(aa), -math.sin(aa)))
+    for s, sx in SIDES:
+        for b in (f'clavicle.{s}', f'shoulder01.{s}'):
+            rest = (fig.p(b, True) - fig.p(b)).normalized()
+            fig.aim(b, (rest + up * 0.3).normalized())
+        d = (adir + Vector((sx * 0.03, 0, 0))).normalized()
+        fig.aim_chain(side_bones(fig, ARM, s), d)
+        fig.aim(f'wrist.{s}', Vector((0, -1, -0.05)))
+        th = (Vector(thigh) + Vector((sx * 0.03, 0, 0))).normalized()
+        fig.aim_chain(side_bones(fig, LEG[:2], s), th)
+        fig.aim_chain(side_bones(fig, LEG[2:], s), Vector(shin).normalized())
+        if toes == 'flat':  # sole towards the floor, heel a little up
+            fig.aim(f'foot.{s}', Vector((0, -1, -0.35)))
+            for t in side_bones(fig, TOES, s):
+                fig.aim(t, Vector((0, -1, 0)))
+        elif toes == 'tucked':  # on the balls, toes bent forward under
+            fig.aim(f'foot.{s}', Vector((0, 0.1, -1)))
+            for t in side_bones(fig, TOES, s):
+                fig.aim(t, Vector((0, -1, -0.1)))
+        else:  # toes untucked: tops of the feet on the floor
+            fig.aim(f'foot.{s}', Vector((0, 1, -0.2)))
+            for t in side_bones(fig, TOES, s):
+                fig.aim(t, Vector((0, 1, -0.1)))
+    if head == 'loose':
+        hd = Vector((0, -0.25, -1)).normalized()  # hangs down between the arms
+        fig.aim_chain(NECK + ['head'], hd)
+    fig.ground()
+    fig.rig.location.y -= fig.p('wrist.L').y  # hands stay where they are across the dog poses
+    fig.update()
+
+
+def _dog_search(fig, build, gap, rng):
+    """Value in rng minimising |gap| after build(value)."""
+    best = None
+    for v in rng:
+        build(v)
+        g = abs(gap())
+        if best is None or g < best[0]:
+            best = (g, v)
+    build(best[1])
+    return best[1]
+
+
+def _hand_low(fig):
+    return _low_near(fig, fig.p('wrist.L'), 0.1)
+
+
+def _knee_low(fig):
+    return _low_near(fig, fig.p('lowerleg01.L'), 0.16)
+
+
+def _dog_checks_common(fig):
+    sh = fig.p('upperarm01.L')
+    out = {}
+    el = angle(sh, fig.p('lowerarm01.L'), fig.p('wrist.L'))
+    out['arm straight (elbow °)'] = (round(el, 1), el > 165)
+    under = abs(fig.p('wrist.L').x - sh.x)
+    out['hands under shoulders, width (cm off)'] = (round(under * 100, 1), under < 0.05)
+    return out
+
+
+def dog_all_fours(fig):
+    """Hands under shoulders, knees under hips, back flat like a table."""
+    # hands/knees on the floor: lean the table (trunk angle, degrees below horizontal) until both touch
+    def b(t):
+        _dog(fig, t, 90, (0, 0.0, -1), (0, 1, 0.0), toes='untucked', head='level')
+    best = _dog_search(fig, b, lambda: _hand_low(fig) - _knee_low(fig), [x / 2 for x in range(-50, 20)])
+    sh, hip = fig.p('upperarm01.L'), fig.p('upperleg01.L')
+    back = _elev(sh - hip)  # shoulders vs hips: a flat table
+    out = _dog_checks_common(fig)
+    out['hand vs knee contact gap (cm)'] = (round((_hand_low(fig) - _knee_low(fig)) * 100, 1),
+                                           abs(_hand_low(fig) - _knee_low(fig)) < 0.015)
+    out['back angle to floor (°)'] = (round(back, 1), abs(back) < 15)
+    return out
+
+
+
+_CACHE = {}
+
+
+def _toe_low(fig):
+    return min(_low_near(fig, fig.p(f'toe3-3.{s}', True), 0.05) for s, _ in SIDES)
+
+
+def dog_tucked(fig):
+    """Hands and knees, toes tucked, knees hovering a few cm off the floor."""
+    best = _CACHE.get('tucked')
+    for t in ([] if best else range(-6, 31, 3)):
+        for f in (0.0, 0.15, 0.3):
+            for d in [x / 20 for x in range(0, 12)]:
+                _dog(fig, t, 90, (0, -f, -1), (0, 1, -d), toes='tucked', head='level')
+                hover = _knee_low(fig) - _hand_low(fig)
+                err = 3 * abs(_hand_low(fig) - _toe_low(fig)) + abs(hover - 0.045)
+                if best is None or err < best[0]:
+                    best = (err, t, d, f)
+    _CACHE['tucked'] = best
+    _dog(fig, best[1], 90, (0, -best[3], -1), (0, 1, -best[2]), toes='tucked', head='level')
+    out = _dog_checks_common(fig)
+    hover = _knee_low(fig) - _hand_low(fig)
+    out['knees off the floor (cm)'] = (round(hover * 100, 1), 2.0 <= hover * 100 <= 14.0)
+    gap = _hand_low(fig) - _toe_low(fig)
+    out['hands vs toes contact gap (cm)'] = (round(gap * 100, 1), abs(gap) < 0.015)
+    toe = fig.p('toe3-1.L')
+    out['toes tucked: toes point forward (y)'] = (round(fig.p('toe3-3.L', True).y - fig.p('toe3-1.L').y, 2),
+                                                  fig.p('toe3-3.L', True).y < fig.p('toe3-1.L').y)
+    return out
+
+
+def dog(fig):
+    """Downward dog: inverted V, straight arms in line with the back, hips highest, head hanging."""
+    tau = 45
+    best = _CACHE.get('dog')
+    for lam in ([] if best else range(35, 86)):
+        a = math.radians(lam)
+        d = (0, math.cos(a), -math.sin(a))
+        _dog(fig, tau, tau, d, d, toes='flat')
+        gap = abs(_hand_low(fig) - _toe_low(fig))
+        if best is None or gap < best[0]:
+            best = (gap, lam)
+    _CACHE['dog'] = best
+    a = math.radians(best[1])
+    d = (0, math.cos(a), -math.sin(a))
+    _dog(fig, tau, tau, d, d, toes='flat')
+    out = _dog_checks_common(fig)
+    gap = _hand_low(fig) - _toe_low(fig)
+    out['hands vs toes contact gap (cm)'] = (round(gap * 100, 1), abs(gap) < 0.015)
+    knee = angle(fig.p('upperleg01.L'), fig.p('lowerleg01.L'), fig.p('foot.L'))
+    out['legs straight (knee °)'] = (round(knee, 1), knee > 165)
+    sh, hip = fig.p('upperarm01.L'), fig.p('upperleg01.L')
+    out['hips above shoulders (cm)'] = (round((hip.z - sh.z) * 100, 1), hip.z - sh.z > 0.2)
+    pts = fig.points()
+    top = max(p.z for p in pts)
+    out['hips are the highest point (cm below)'] = (round((top - max(p.z for p in pts if abs(p.y - hip.y) < 0.12)) * 100, 1),
+                                                    max(p.z for p in pts if abs(p.y - hip.y) < 0.12) > top - 0.03)
+    bend = angle(fig.p('upperleg01.L'), sh, fig.p('wrist.L'))
+    out['back-to-arm line (°)'] = (round(bend, 1), bend > 165)
+    ank = fig.p('foot.L').z
+    out['heel height (ankle, cm)'] = (round(ank * 100, 1), ank < 0.16)
+    hd = fig.p('head', True)
+    out['head below shoulders (cm)'] = (round((sh.z - hd.z) * 100, 1), sh.z - hd.z > 0.05)
+    neck_a = math.degrees((fig.p('head', True) - fig.p('neck01')).angle(fig.p('spine01', True) - fig.p('spine05')))
+    fw = abs(fig.p('foot.L').x - fig.p('foot.R').x)
+    hw = abs(fig.p('wrist.L').x - fig.p('wrist.R').x)
+    out['feet gap / hands gap'] = (round(fw / hw, 2), 0.4 < fw / hw < 1.0)
+    out['head hangs off the back line (°)'] = (round(neck_a, 1), neck_a > 15)
+    return out
+
+
+# --- scapular pull (door bar) ---------------------------------------------------------
+
+RELAXED, PULLED = 0.35, 0.15  # how far the shoulder blades ride up (0.15 = the dead hang's active shoulders)
+
+
+def _scap_hang(fig, pulled, bar_z=None):
+    return _hang(fig, False, roll=ROLL[0], bar_z=bar_z, shrug=PULLED if pulled else RELAXED)
+
+
+def _scap_setup(fig):
+    """Starts from the relaxed hang: the bar sits 20 cm above straight-armed feet, as in the dead hang lesson."""
+    _best_roll(fig)
+    _scap_hang(fig, False)
+    return _BAR['z']
+
+
+def _grip_gap(fig, bz):
+    g = sum(((fig.p(f'metacarpal3.{s}') + fig.p(f'metacarpal3.{s}', True)) / 2 for s, _ in SIDES), Vector()) / 2
+    return abs(g.z + 0.03 - bz)
+
+
+def scap_start(fig):
+    """Relaxed dead hang: arms straight, shoulders loose up by the ears."""
+    bz = _scap_setup(fig)
+    _scap_hang(fig, False, bar_z=bz)
+    out = _hang_checks(fig)
+    out.pop('hips under shoulders (cm)', None)
+    return out
+
+
+def scap_pull(fig):
+    """Shoulder blades pulled down and back, arms still straight: the body rises a few cm."""
+    bz = _scap_setup(fig)
+    _scap_hang(fig, False, bar_z=bz)
+    hip0 = fig.p('spine05').z
+    sh0 = fig.p('upperarm01.L').z - fig.p('neck01').z
+    _scap_hang(fig, True, bar_z=bz)
+    out = _hang_checks(fig)
+    out.pop('hips under shoulders (cm)', None)
+    rise = fig.p('spine05').z - hip0
+    out['body rise (cm)'] = (round(rise * 100, 1), 2.0 <= rise * 100 <= 7.0)
+    sh1 = fig.p('upperarm01.L').z - fig.p('neck01').z
+    out['shoulders down vs relaxed (cm)'] = (round((sh0 - sh1) * 100, 1), sh0 - sh1 > 0.02)
+    out['hands on the bar (cm off)'] = (round(_grip_gap(fig, bz) * 100, 1), _grip_gap(fig, bz) < 0.02)
+    return out
+
+
+SCAP = {}
+
+
 POSES = {'stand': stand, 'chin-tuck': chin_tuck, 'high-plank': high_plank,
          'jj-stand': jj_stand, 'jj-arms': jj_arms, 'jj-feet': jj_feet, 'jj-both': jj_both, 'jj-land': jj_land,
          'hang-passive': hang_passive, 'dead-hang': dead_hang,
          'rope-ready': rope_ready, 'rope-wrists': rope_wrists, 'rope-hop': rope_hop,
+         'cobra-tuck': cobra_tuck, 'high-knees-up': high_knees_up, 'scap-start': scap_start, 'scap-pull': scap_pull, 'dog-all-fours': dog_all_fours, 'dog-tucked': dog_tucked, 'dog': dog,
          'cobra-flat': cobra_flat, 'cobra-thumbs': cobra_thumbs, 'cobra-lift': cobra_lift}

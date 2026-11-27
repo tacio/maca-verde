@@ -3,8 +3,8 @@ Render lesson pictures headless:
 
     blender -b --python art/render.py -- [--out DIR] [lesson …]
 
-Each shot is (lesson, step, view, pose[, options]); options: `frame` ('full' or
-'upper' = head and shoulders, for small movements) and `ghost` (a start pose
+Each shot is (lesson, step, view, pose[, options]); options: `frame` ('full',
+'upper' = head and shoulders, for small movements, or 'hand' = close-up of the near hand) and `ghost` (a start pose
 drawn faint and dashed behind). Files are named
 <lesson>-<step>-<view>.svg.
 Prints every pose check and exits non-zero if one fails.
@@ -16,7 +16,11 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
+import addon_utils  # noqa: E402
 import bpy  # noqa: E402
+
+if not hasattr(bpy.types.Scene, 'svg_export'):  # installed but not enabled in this profile
+    addon_utils.enable('bl_ext.blender_org.freestyle_svg_exporter', default_set=False)
 
 from lib import Figure, export_line_svg, line_paths, setup_camera  # noqa: E402
 from poses import POSES  # noqa: E402
@@ -42,13 +46,31 @@ SHOTS = [
     ('door-bar-dead-hang', 3, 'side', 'dead-hang', {'ghost': 'hang-passive'}),
     ('door-bar-dead-hang', 4, 'side', 'dead-hang'),
     ('rope-bounce', 1, 'front', 'rope-ready'),
-    ('rope-bounce', 2, 'side', 'rope-wrists', {'ghost': 'rope-ready'}),
-    ('rope-bounce', 3, 'side', 'rope-hop'),
-    ('rope-bounce', 4, 'side', 'rope-hop'),
+    ('rope-bounce', 2, 'diagonal', 'rope-wrists', {'ghost': 'rope-ready'}),
+    ('rope-bounce', 3, 'diagonal', 'rope-hop'),
+    ('rope-bounce', 4, 'diagonal', 'rope-hop'),
     ('cobra-lift', 1, 'side', 'cobra-flat'),
-    ('cobra-lift', 2, 'front', 'cobra-thumbs'),
+    ('cobra-lift', 2, 'side', 'cobra-thumbs', {'frame': 'hand', 'ghost': 'cobra-flat'}),
     ('cobra-lift', 3, 'side', 'cobra-lift', {'ghost': 'cobra-thumbs'}),
     ('cobra-lift', 4, 'side', 'cobra-lift'),
+    ('chin-tuck-cobra-hold', 1, 'side', 'cobra-lift'),
+    ('chin-tuck-cobra-hold', 2, 'side', 'cobra-tuck', {'frame': 'upper', 'ghost': 'cobra-lift'}),
+    ('chin-tuck-cobra-hold', 3, 'side', 'cobra-tuck'),
+    ('chin-tuck-cobra-hold', 4, 'side', 'cobra-tuck'),
+    ('high-knees', 1, 'side', 'stand'),
+    ('high-knees', 2, 'side', 'high-knees-up', {'ghost': 'stand'}),
+    ('high-knees', 3, 'front', 'high-knees-up'),
+    ('high-knees', 4, 'side', 'high-knees-up'),
+    ('downward-dog', 1, 'side', 'dog-all-fours'),
+    ('downward-dog', 2, 'side', 'dog-tucked', {'ghost': 'dog-all-fours'}),
+    ('downward-dog', 3, 'side', 'dog', {'ghost': 'dog-tucked'}),
+    ('downward-dog', 3, 'diagonal', 'dog'),
+    ('downward-dog', 4, 'side', 'dog'),
+    ('door-bar-scapular-pull', 1, 'front', 'scap-start'),
+    ('door-bar-scapular-pull', 2, 'side', 'scap-pull', {'ghost': 'scap-start', 'frame': 'upper'}),
+    ('door-bar-scapular-pull', 2, 'front', 'scap-pull', {'ghost': 'scap-start', 'frame': 'upper'}),
+    ('door-bar-scapular-pull', 3, 'side', 'scap-pull', {'ghost': 'scap-start', 'frame': 'upper'}),
+    ('door-bar-scapular-pull', 4, 'side', 'scap-pull'),
 ]
 
 

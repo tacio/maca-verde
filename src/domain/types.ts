@@ -37,7 +37,7 @@ export interface Exercise {
 /* --- lessons (P14, docs/design/04-curriculum.md) ------------------------- */
 
 /** Camera angles a lesson picture can show. */
-export type LessonView = 'side' | 'front' | 'top';
+export type LessonView = 'side' | 'front' | 'top' | 'diagonal';
 
 export interface LessonStep {
   /** One instruction, ≤ 2 lines on the lesson screen. */

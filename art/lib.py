@@ -147,6 +147,7 @@ class Figure:
         return pts
 
     def prop_points(self):
+        bpy.context.view_layer.update()  # props just added (the rope) aren't evaluated yet
         dg = bpy.context.evaluated_depsgraph_get()
         pts = []
         for o in self.props:
@@ -235,11 +236,14 @@ VIEWS = {
     'side': (Vector((1, 0, 0)), UP),      # figure's left side; head to the left when lying
     'front': (Vector((0, -1, 0)), UP),
     'top': (Vector((0, 0, 1)), Vector((0, -1, 0))),
+    # front-left, ~20° above: shows depth (a rope under the feet reads as a loop, not a line)
+    'diagonal': (Vector((1, -1, 0.5)).normalized(), UP),
 }
 
 
 def setup_camera(fig, view, frame='full', margin=1.15, res=(800, 600)):
-    """Orthographic camera fitting the figure: `full` (with the floor) or `upper` (head and shoulders)."""
+    """Orthographic camera fitting the figure: `full` (with the floor), `upper` (head and
+    shoulders) or `hand` (close-up of the hand nearer the camera)."""
     sc = bpy.context.scene
     cam = sc.objects.get('cam')
     if not cam:
@@ -249,18 +253,25 @@ def setup_camera(fig, view, frame='full', margin=1.15, res=(800, 600)):
     cam.data.type = 'ORTHO'
     sc.render.resolution_x, sc.render.resolution_y = res
     upper = frame == 'upper'
-    lo, hi = fig.bounds(above=fig.p('spine01').z - 0.05 if upper else None)
-    if not upper:
+    d, up = VIEWS[view]
+    if frame == 'hand':
+        wrist = max((fig.p(f'wrist.{s}') for s in 'LR'), key=lambda p: p.dot(d))
+        pts = [p for p in fig.points() if (p - wrist).length < 0.16]
+        lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
+        hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
+        margin = 1.5
+    else:
+        lo, hi = fig.bounds(above=fig.p('spine01').z - 0.05 if upper else None)
+    if frame == 'full':
         lo.z = 0.0  # always frame the floor
     centre = (lo + hi) / 2
-    d, up = VIEWS[view]
     right = up.cross(d).normalized()
     true_up = d.cross(right).normalized()
     size = hi - lo
-    w = abs(size.dot(right)) or 0.1
-    h = abs(size.dot(true_up)) or 0.1
+    w = sum(abs(size[i] * right[i]) for i in range(3)) or 0.1  # projected box, any view
+    h = sum(abs(size[i] * true_up[i]) for i in range(3)) or 0.1
     cam.data.ortho_scale = max(w, h * ASPECT) * margin
-    if view != 'top' and not upper:  # floor near the frame's bottom edge, figure above it
+    if view in ('side', 'front') and frame == 'full':  # floor near the frame's bottom edge, figure above it
         frame_h = cam.data.ortho_scale / ASPECT
         centre = centre - true_up * centre.dot(true_up) + true_up * (frame_h / 2 - frame_h * 0.08)
     cam.location = centre + d * 10
@@ -318,7 +329,7 @@ def export_line_svg(fig, path, view, ghost=None):
     if ghost:
         svg += f'<path d="{ghost}" stroke-opacity=".3" stroke-dasharray="3 6"/>\n'
     svg += f'<path d="{d}"/>\n</svg>\n'
-    if view != 'top':
+    if view in ('side', 'front'):  # in a tilted view the floor isn't a line
         fy = (1 - world_to_camera_view(sc, sc.camera, Vector((0, 0, 0))).y) * h
         if 0 < fy < h:
             svg = svg.replace('</svg>', f'<path d="M0 {fy:.1f}H{w}" stroke-opacity=".35"/>\n</svg>')

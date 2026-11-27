@@ -14,7 +14,7 @@ import { useNav } from '../nav';
 import { newLogId } from '../today';
 import { MissingItem } from './MissingItem';
 
-const VIEW_LABEL: Record<LessonView, string> = { side: 'Side', front: 'Front', top: 'Top' };
+const VIEW_LABEL: Record<LessonView, string> = { side: 'Side', front: 'Front', top: 'Top', diagonal: 'Diagonal' };
 
 /** A planned lesson (`learn:<itemId>`): completing it logs the lesson and ticks the item. */
 export function LearnScreen({ itemId, step }: { itemId: string; step?: number }) {

@@ -53,9 +53,9 @@ export const LESSONS: Record<string, Lesson> = {
     parts: [],
     steps: [
       { text: 'Handles at hip height, elbows close to your ribs.', views: ['front'] },
-      { text: 'Turn the rope with your wrists, not your arms.', views: ['side'] },
-      { text: 'Hop on the balls of both feet, 1–2 cm off the floor.', views: ['side'] },
-      { text: 'Try 10 jumps. Tripping is normal: just restart.', views: ['side'] },
+      { text: 'Turn the rope with your wrists, not your arms.', views: ['diagonal'] },
+      { text: 'Hop on the balls of both feet, 1–2 cm off the floor.', views: ['diagonal'] },
+      { text: 'Try 10 jumps. Tripping is normal: just restart.', views: ['diagonal'] },
     ],
   },
   'cobra-lift': {
@@ -63,7 +63,7 @@ export const LESSONS: Record<string, Lesson> = {
     parts: [],
     steps: [
       { text: 'Lie face down, arms by your sides, palms down.', views: ['side'] },
-      { text: 'Turn your thumbs up toward the ceiling.', views: ['front'] },
+      { text: 'Turn your thumbs up toward the ceiling.', views: ['side'] },
       { text: 'Lift your chest a few cm, eyes on the floor.', views: ['side'] },
       { text: 'Try 3 lifts with a 3 s hold.', views: ['side'] },
     ],
@@ -94,7 +94,7 @@ export const LESSONS: Record<string, Lesson> = {
     steps: [
       { text: 'Start on hands and knees.', views: ['side'] },
       { text: 'Tuck your toes and lift your knees off the floor.', views: ['side'] },
-      { text: 'Push the floor away; hips go up and back, head hangs loose.', views: ['side', 'front'] },
+      { text: 'Push the floor away; hips go up and back, head hangs loose.', views: ['side', 'diagonal'] },
       { text: 'Heels toward the floor (they needn’t touch). Try a 10 s hold.', views: ['side'] },
     ],
   },
