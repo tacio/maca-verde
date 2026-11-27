@@ -325,7 +325,7 @@ def export_line_svg(fig, path, view, ghost=None):
     w, h = sc.render.resolution_x, sc.render.resolution_y
     d = line_paths(path)
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" fill="none" '
-           f'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\n')
+           f'stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">\n')
     if ghost:
         svg += f'<path d="{ghost}" stroke-opacity=".3" stroke-dasharray="3 6"/>\n'
     svg += f'<path d="{d}"/>\n</svg>\n'

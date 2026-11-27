@@ -13,6 +13,7 @@
     "vectors": "node scripts/daykeep-vectors.mjs",
     "check:ux": "playwright test",
     "shots": "node scripts/shots.mjs",
+    "art:ship": "rm -f src/assets/lessons/*.svg && cp art/out/*.svg src/assets/lessons/",
     "icons": "node scripts/icons.mjs"
   },
   "dependencies": {

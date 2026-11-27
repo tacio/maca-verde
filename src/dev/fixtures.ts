@@ -272,7 +272,7 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     fixture: { history: '.' + run(5) + 'T', today: TODAY, curriculum: true },
   },
   'lesson-first-step': {
-    description: 'Lesson step 1 of 4 (chin tuck): picture placeholder, one instruction, Next',
+    description: 'Lesson step 1 of 4 (chin tuck): picture, one instruction, Next',
     fixture: { history: '.T', today: TODAY, curriculum: true },
     screen: `learn:${TODAY}-0`,
   },
@@ -295,6 +295,11 @@ export const FIXTURE_SCENARIOS: Record<string, FixtureScenario> = {
     description: 'Reviewing a lesson from "How?" (downward dog): last step says Done, logs nothing',
     fixture: { history: STANDARD, today: TODAY },
     screen: 'lesson:downward-dog:4',
+  },
+  'lesson-placeholder': {
+    description: 'A lesson not drawn yet (squat): labelled picture placeholder',
+    fixture: { history: STANDARD, today: TODAY },
+    screen: 'lesson:squat:1',
   },
   'preview-basics': {
     description: 'Workout preview of a Basics workout during the curriculum, "Open lesson" under How?',

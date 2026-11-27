@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, ImageOff } from 'lucide-react';
 import { LESSONS } from '../../data/lessons';
+import { stepImage } from '../../data/lessonImages';
 import type { LessonView } from '../../domain/types';
 import { dayAt } from '../../domain/plan';
 import { nowUnix } from '../../time/clock';
@@ -42,7 +43,8 @@ export function LessonScreen({ skillId, log, step: initialStep }: { skillId: str
   const name = exerciseName(skillId);
   const s = lesson.steps[step];
   const shown = view && s.views.includes(view) ? view : s.views[0];
-  const image = s.images?.[shown];
+  const image = stepImage(skillId, step, shown);
+  const label = `${name}, step ${step + 1}, ${VIEW_LABEL[shown].toLowerCase()} view`;
   // Already learned today: the last step just closes.
   const learnedToday = data.lessons.some((l) => l.skillId === skillId && dayAt(l.unix, cfg) === record.today);
   const logs = log && !learnedToday;
@@ -97,17 +99,23 @@ export function LessonScreen({ skillId, log, step: initialStep }: { skillId: str
         )}
         <figure className="flex flex-col gap-3">
           {image ? (
-            <img
+            // An outline SVG drawn as a mask, so its lines take the ink token (light and dark).
+            <div
               data-step-image
-              src={image}
-              alt={`${name}, step ${step + 1}, ${VIEW_LABEL[shown].toLowerCase()} view`}
-              className="aspect-[4/3] w-full rounded-card border border-line bg-surface object-contain"
-            />
+              role="img"
+              aria-label={label}
+              className="aspect-[4/3] w-full rounded-card border border-line bg-surface p-2"
+            >
+              <div
+                className="h-full w-full bg-ink [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain]"
+                style={{ maskImage: `url("${image}")` }}
+              />
+            </div>
           ) : (
             <div
               data-step-image
               role="img"
-              aria-label={`${name}, step ${step + 1}, ${VIEW_LABEL[shown].toLowerCase()} view: picture coming`}
+              aria-label={`${label}: picture coming`}
               className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line bg-surface text-ink-muted"
             >
               <ImageOff aria-hidden size={28} strokeWidth={1.5} />

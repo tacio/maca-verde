@@ -44,8 +44,6 @@ export interface LessonStep {
   text: string;
   /** Angles this step has a picture for, first = default; never empty. */
   views: LessonView[];
-  /** Picture per angle; a missing one renders as a labelled placeholder. */
-  images?: Partial<Record<LessonView, string>>;
 }
 
 /** The lesson that introduces one exercise (keyed by exercise id). */

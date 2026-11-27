@@ -1,7 +1,7 @@
 /**
  * Lessons and their order (P14; docs/design/04-curriculum.md, generated from §2–§3).
  * One lesson a day; every part comes before the combinations that use it
- * (src/data/lessons.test.ts). Pictures are placeholders until `images` are set.
+ * (src/data/lessons.test.ts). Pictures: src/data/lessonImages.ts (placeholders until drawn).
  */
 
 import type { Lesson } from '../domain/types';

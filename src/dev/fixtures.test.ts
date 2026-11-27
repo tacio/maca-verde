@@ -50,6 +50,7 @@ const EXPECT: Record<string, (r: RecordSummary) => void> = {
   'lesson-last-step': (r) => expect(r.todayEval.items[0]).toMatchObject({ satisfied: false, item: { kind: 'learn' } }),
   'lesson-combo': (r) => expect(r.todayEval.items[0].item).toMatchObject({ kind: 'learn', skillId: 'chin-tuck-cobra-hold' }),
   'lesson-review': (r) => expect(r.todayEval.items.every((p) => p.item.kind !== 'learn')).toBe(true),
+  'lesson-placeholder': (r) => expect(r.todayEval.items.every((p) => p.item.kind !== 'learn')).toBe(true),
   'preview-basics': (r) => expect(r.todayEval.items[1].item).toMatchObject({ id: `${r.today}-1`, kind: 'workout', routineId: 'basics:5' }),
   'cycle-curriculum': (r) => {
     expect(r.today).toBe(14358);

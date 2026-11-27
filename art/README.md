@@ -25,7 +25,7 @@ Setup: Blender ≥ 5.1 on PATH with the MPFB and Freestyle SVG Exporter extensio
 
 ## Status and pending
 
-As of 2026-11-27 (day 14367). The app still shows placeholders: no picture is wired in yet.
+As of 2026-11-27 (day 14367). Drawn lessons show their pictures in the app; the rest show placeholders.
 
 **Drawn** (all checks pass; `art/out/`, regenerate with the command above):
 chin-tuck, high-plank, jumping-jacks, door-bar-dead-hang, rope-bounce, cobra-lift,
@@ -48,12 +48,13 @@ rounded mass; scapular pulls show "down" but not "back".
 Expect ~1.5 h and ~125k Sonnet tokens per batch of 4; the main session reviews each batch's
 contact sheets (`art/out/prev-<lesson>.png`) against the cues before the next.
 
-**Wiring into the app** (after the drawings): an `<img>` can't inherit `currentColor`, so
-draw each SVG as a CSS mask (`mask-image: url(…)` on an element with a token background,
-e.g. `bg-ink`), keeping `data-step-image`, `role="img"` and the aria-label. Ship the SVGs
-from `art/out/` to a served folder (e.g. `public/lessons/<lesson>-<step>-<view>.svg`) and
-resolve them by that naming convention instead of hand-editing `images` in lessons.ts. The
-PWA precache should include them (offline lessons). Update the lesson scenarios' baselines.
+**In the app** (since 2026-11-27): `npm run art:ship` copies `art/out/*.svg` to
+`src/assets/lessons/` (committed). `src/data/lessonImages.ts` finds a step's picture by its
+name, `<lesson>-<step>-<view>.svg`, and a step without one shows the placeholder. The lesson
+screen draws each SVG as a CSS mask over `bg-ink`, so lines follow the theme. Vite bundles the
+files and the PWA precaches them for offline use. `lessonImages.test.ts` rejects a file whose
+step or view isn't in `lessons.ts`, and a lesson that is only partly drawn. After re-rendering,
+run `art:ship` and update the lesson baselines.
 
 **Setup on a new machine:** Blender ≥ 5.1 on PATH; extensions `mpfb` and
 `freestyle_svg_exporter` (command under Setup above); Inkscape and ImageMagick for
