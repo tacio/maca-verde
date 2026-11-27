@@ -1,11 +1,27 @@
 /// <reference types="vitest/config" />
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/** Build stamp shown in Settings → Data: short commit · build date (UTC). Dev shows `dev`,
+ *  so screenshots and visual baselines don't change with every commit. */
+function buildStamp(): string {
+  let commit = 'unknown';
+  try {
+    commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+  } catch {
+    // not a git checkout
+  }
+  return `${commit} · ${new Date().toISOString().slice(0, 10)}`;
+}
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: './',
+  define: {
+    __BUILD_STAMP__: JSON.stringify(command === 'build' ? buildStamp() : 'dev'),
+  },
   plugins: [
     react(),
     // Installable, offline PWA (production builds only; dev has no service worker).
@@ -48,4 +64,4 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
-});
+}));

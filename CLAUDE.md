@@ -40,7 +40,8 @@ Read them before touching UI or domain code:
 npm run dev          # Vite dev server on :5173, exposed on LAN (host: true) for phone testing
 npm run check        # tsc -b && vitest run && lint:tokens && check:ux — the correctness gate
 npm run check:ux     # Playwright: tests/ux (rule self-tests, all scenarios × light/dark, visual baselines); own server on :5174
-npx playwright test visual --update-snapshots   # rewrite the visual baselines after an intended UI change
+npx playwright test visual --update-snapshots   # rewrite failing visual baselines after an intended UI change
+                                                # (=all also rewrites ones within tolerance, maxDiffPixelRatio 0.002: small text changes)
 npm run shots [-- scenario… --desktop]   # shots/<scenario>-<theme>.png + shots/contact-sheet.png
 npm run test         # vitest only (src/**/*.test.ts)
 npm run lint:tokens  # P13 token lint
@@ -55,7 +56,7 @@ Playwright uses its cached Chromium (`@playwright/test` pinned to 1.56.x); don't
 
 **Visual baselines** (`tests/ux/visual.spec.ts`): every scenario × light/dark, viewport-sized, compared with `toHaveScreenshot` against `tests/ux/__screenshots__/<scenario>-<theme>.png` (committed; `snapshotPathTemplate` in `playwright.config.ts`, no platform suffix). Playwright's clock is paused before load (the scenario's `now` still places the app clock), so countdowns and moments are frozen; animations are disabled. Skipped when `CI` is set: the baselines use this machine's system fonts.
 
-**PWA** (`vite-plugin-pwa`, config in `vite.config.ts`): production builds get a manifest and a Workbox service worker that precaches the whole app (works offline). Dev has no service worker, so scenarios and Playwright are unaffected. Updates use `registerType: 'prompt'` with no prompt: a new version waits until every app window is closed, so it never reloads mid-workout. `src/storage/persist.ts` asks for persistent storage so localStorage isn't evicted.
+**PWA** (`vite-plugin-pwa`, config in `vite.config.ts`): production builds get a manifest and a Workbox service worker that precaches the whole app (works offline). Dev has no service worker, so scenarios and Playwright are unaffected. Updates use `registerType: 'prompt'` with no prompt: a new version waits until every app window is closed, so it never reloads mid-workout. `src/storage/persist.ts` asks for persistent storage so localStorage isn't evicted. Settings → Data shows a build stamp (`__BUILD_STAMP__`, `vite.config.ts`): short commit · build date in production builds, `dev` otherwise so baselines don't change per commit.
 
 Deployment: pushing to `main` triggers `.github/workflows/deploy.yml` (npm ci → Playwright Chromium → `npm run check` → build → GitHub Pages). `vite.config.ts` uses `base: './'` so the bundle works under any subpath — keep asset paths relative.
 

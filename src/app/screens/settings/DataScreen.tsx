@@ -203,6 +203,10 @@ export function DataScreen({ connected: simulate }: { connected?: boolean }) {
         )}
       </section>
 
+      <p className="border-t border-line pt-5 text-sm tabular-nums text-ink-muted">
+        Version {__BUILD_STAMP__}
+      </p>
+
       <Sheet
         open={!!pending}
         onClose={() => setPending(null)}
