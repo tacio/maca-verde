@@ -31,37 +31,3 @@ export function useClockMs(active: boolean, intervalMs = TIMER_TICK_MS): number 
   }, [active, intervalMs]);
   return now;
 }
-
-interface WakeLockLike {
-  release: () => Promise<void>;
-}
-
-/**
- * Keep the screen on while `active` (Screen Wake Lock API, where available).
- * The browser drops the lock when the page is hidden, so it's re-requested
- * on return; released on exit.
- */
-export function useWakeLock(active: boolean): void {
-  useEffect(() => {
-    const wl = (navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<WakeLockLike> } }).wakeLock;
-    if (!active || !wl) return;
-    let lock: WakeLockLike | null = null;
-    let gone = false;
-    const acquire = () => {
-      if (document.visibilityState !== 'visible') return;
-      wl.request('screen')
-        .then((l) => {
-          if (gone) void l.release().catch(() => undefined);
-          else lock = l;
-        })
-        .catch(() => undefined);
-    };
-    acquire();
-    document.addEventListener('visibilitychange', acquire);
-    return () => {
-      gone = true;
-      document.removeEventListener('visibilitychange', acquire);
-      if (lock) void lock.release().catch(() => undefined);
-    };
-  }, [active]);
-}

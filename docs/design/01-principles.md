@@ -82,6 +82,13 @@ The home screen is today's plan as a short checklist with one completion indicat
 - **Apply.** Every state change is spoken (exercise name, cue, 3-2-1, rest, next). One sound at a time. The screen shows **only** the current exercise, the remaining seconds, and a progress strip. At ~3 m, 0.5° ≈ 26 mm ≈ 165 CSS px on a Pixel 8 (≈ 6.4 CSS px/mm), so the countdown shows bare seconds ("20"), not "0:20". The only mid-workout control is **Pause**, full-width at the bottom (its sheet: Resume, End workout). **No skipping**: work and rest intervals always run their full time — skipping is bargaining with an approved plan.
 - **Check.** HUD countdown digit cap height ≥ 160 CSS px at 412 px width; HUD has exactly 1 control (Pause), ≥ 72 CSS px tall; no skip control in any timed flow; each phase change triggers a speech call; all other tap targets ≥ 48 CSS px.
 
+### P15 — Hands-free screens keep the screen on
+A screen the user watches without holding the phone (it lies on the floor or a shelf while they move or breathe) never goes dark on them.
+
+- **Evidence.** None specific: it follows from P12 (the phone meters away, no mid-flow touches). Touching the phone only to wake it is an unplanned interaction mid-exercise.
+- **Apply.** A screen is **hands-free** when it is meant to be watched without touching it: it runs on its own (timed steps, countdowns) and the user's hands are busy. Hands-free screens hold a screen wake lock while they run and release it when they end. A screen that needs a touch to move on (a lesson step, the drill's reply, logs) is not hands-free: the screen may turn off there. Hands-free is declared by the screen (`FullScreen handsFree`, `useHandsFree`), never inferred from its name.
+- **Check.** A screen that advances on its own (`data-autoadvance`) or shows a running timer (`role="timer"`) is marked `data-hands-free`. A screen marked `data-hands-free` holds exactly one wake lock; no other screen holds one. Which screens are hands-free is listed in [02-workflows](02-workflows.md) (J6, J6b, Workout HUD).
+
 ## D. Feeling
 
 ### P13 — Celebrate competence, briefly; one calm visual system
@@ -107,7 +114,7 @@ New movements arrive one at a time, taught before they're used, parts before com
 | Lock at day start | P2 |
 | Written justification | P8 |
 | Mood checks / drills as counts | P1, P11 |
-| Earphones, phone meters away | P12 |
+| Earphones, phone meters away | P12, P15 |
 | Clutter, explanations, too much at once | P9, P10, P13 |
 | "Asana, not Jira", gamification | P9, P13 |
 | Gradual introduction, lessons | P10, P13, P14 |

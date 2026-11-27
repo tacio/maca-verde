@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { IconButton } from './Button';
+import { useHandsFree } from './handsFree';
 
 export interface FullScreenProps {
   /** Value of `data-screen` (UX checks are scoped to it). */
@@ -16,13 +17,18 @@ export interface FullScreenProps {
   footer?: ReactNode;
   /** A timed step that runs out on its own: no primary action (`data-autoadvance`, P9/P12). */
   autoAdvance?: boolean;
+  /** Watched without holding the phone (P15): keeps the screen on, marks `data-hands-free`. */
+  handsFree?: boolean;
   children: ReactNode;
 }
 
 /** A flow screen without the bottom nav (workout, log, mood, settings…). */
-export function FullScreen({ screen, title, onClose, dismiss = 'close', trailing, footer, autoAdvance, children }: FullScreenProps) {
+export function FullScreen({ screen, title, onClose, dismiss = 'close', trailing, footer, autoAdvance, handsFree = false, children }: FullScreenProps) {
+  const handsFreeAttrs = useHandsFree(handsFree);
   return (
-    <div data-screen={screen} data-autoadvance={autoAdvance ? '' : undefined} className="mx-auto flex min-h-dvh max-w-md flex-col bg-canvas">
+    <div
+      data-screen={screen}
+      {...handsFreeAttrs} data-autoadvance={autoAdvance ? '' : undefined} className="mx-auto flex min-h-dvh max-w-md flex-col bg-canvas">
       <header className="sticky top-0 z-10 flex items-center gap-1 bg-canvas px-2 pb-1 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <IconButton icon={dismiss === 'back' ? ArrowLeft : X} label={dismiss === 'back' ? 'Back' : 'Close'} onClick={onClose} />
         <h1 className="flex-1 truncate text-lg font-semibold">{title}</h1>

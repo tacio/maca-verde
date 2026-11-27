@@ -6,6 +6,9 @@
  *   [data-primary]        the one primary action of a screen (P9)
  *   [data-autoadvance]    on a timed screen's root: a step that runs out on its own
  *                         (drill Elevate/Freeze/Sigh) — no primary at all, not even a disabled one
+ *   [data-hands-free]     on a screen root watched without holding the phone; keeps the screen
+ *                         on (P15). Required when the screen runs on its own: [data-autoadvance]
+ *                         or a visible [role=timer]. Set only through useHandsFree (src/ui/handsFree.ts)
  *   [data-nav]            bottom navigation, ≤ 4 destinations (P9)
  *   [data-hud-control]    the HUD control (Pause): ≥ 72 px tall, at most 1 per screen (P12)
  *   [data-hud-digits]     HUD countdown, digit cap height ≥ 160 px (P12)
@@ -32,7 +35,8 @@ export type RuleName =
   | 'last-hint'
   | 'justify-copy'
   | 'no-skip'
-  | 'lesson-image';
+  | 'lesson-image'
+  | 'hands-free';
 
 export interface Violation {
   rule: RuleName;
@@ -80,6 +84,16 @@ export async function checkDom(page: Page): Promise<Violation[]> {
         add('primary', `${name}: [data-autoadvance] is only for timed screens (${L.timedScreens.join(', ')})`);
       const expected = auto ? 0 : 1;
       if (primaries.length !== expected) add('primary', `${name}: ${primaries.length} visible [data-primary], expected ${expected}`);
+
+      // P15 — a screen that runs on its own is watched hands-free, so it keeps the screen on.
+      if (!screen.hasAttribute('data-hands-free')) {
+        const why = auto
+          ? '[data-autoadvance]'
+          : [...screen.querySelectorAll('[role=timer]')].some(visible)
+            ? 'a running [role=timer]'
+            : null;
+        if (why) add('hands-free', `${name}: has ${why} but no [data-hands-free] (FullScreen handsFree / useHandsFree)`);
+      }
 
       // P12 — touch targets.
       const interactive = [

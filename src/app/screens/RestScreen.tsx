@@ -13,7 +13,7 @@ import { useApp } from '../AppContext';
 import { findPlanItem } from '../items';
 import { useBackGuard, useNav } from '../nav';
 import { newLogId } from '../today';
-import { useClockMs, useWakeLock } from '../timers';
+import { useClockMs } from '../timers';
 import { MissingItem } from './MissingItem';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -46,8 +46,6 @@ function RestTimer({ item, mid }: { item: RestItem; mid: boolean }) {
   const finished = isFinished(phases, run) || run.ended;
   const now = useClockMs(!finished && !isPaused(run), 1000);
   const kind = cap(item.restKind);
-
-  useWakeLock(!finished);
 
   const log = (final: Run, full: boolean) => {
     const unix = nowUnix();
@@ -135,6 +133,7 @@ function RestTimer({ item, mid }: { item: RestItem; mid: boolean }) {
       screen="rest"
       title={kind}
       onClose={endNow}
+      handsFree={!finished}
       footer={
         <div className="grid grid-cols-2 gap-3">
           <Button variant="primary" full icon={paused ? Play : Pause} onClick={toggle}>
@@ -147,12 +146,14 @@ function RestTimer({ item, mid }: { item: RestItem; mid: boolean }) {
       }
     >
       <div className="flex flex-col items-center gap-6 pt-16">
-        <ProgressRing value={progress(phases, run, now)} label={`${formatSeconds(Math.ceil(left))} left`} size={256} stroke={6}>
-          <span className="flex flex-col items-center gap-1">
-            <span className="text-2xl font-semibold tabular-nums text-ink">{formatSeconds(Math.ceil(left))}</span>
-            <span className="text-sm font-normal text-ink-muted">{paused ? 'paused' : 'left'}</span>
-          </span>
-        </ProgressRing>
+        <div role="timer" className="flex">
+          <ProgressRing value={progress(phases, run, now)} label={`${formatSeconds(Math.ceil(left))} left`} size={256} stroke={6}>
+            <span className="flex flex-col items-center gap-1">
+              <span className="text-2xl font-semibold tabular-nums text-ink">{formatSeconds(Math.ceil(left))}</span>
+              <span className="text-sm font-normal text-ink-muted">{paused ? 'paused' : 'left'}</span>
+            </span>
+          </ProgressRing>
+        </div>
         <p className="text-base text-ink-muted">{paused ? 'Paused. Resume when ready.' : 'Breathe slowly. The chime ends it.'}</p>
       </div>
     </FullScreen>

@@ -91,6 +91,11 @@ const CASES: { rule: RuleName; bad: string; good: string }[] = [
       '<p>Stand tall, eyes level.</p><button data-primary>Next</button></main>',
   },
   {
+    rule: 'hands-free',
+    bad: screen(PRIMARY + '<p role="timer">2:00</p>'),
+    good: '<main data-screen="fixture" data-hands-free><h1>Rest</h1><button data-primary>Pause</button><p role="timer">2:00</p></main>',
+  },
+  {
     rule: 'text-lines',
     bad: screen(PRIMARY + `<p>${'Long explanation about the science of intervals. '.repeat(4)}</p>`),
     good: screen(
@@ -126,6 +131,13 @@ test('rule primary: a self-advancing timed step shows no primary', async ({ page
   expect((await violations(page, step('<button data-primary disabled>Next in 20 s</button>'), 'primary')).length).toBeGreaterThan(0);
   const notTimed = '<main data-screen="today" data-autoadvance><h1>Today</h1></main>';
   expect((await violations(page, notTimed, 'primary')).length).toBeGreaterThan(0);
+});
+
+test('rule hands-free: a self-advancing step needs it; a screen without timers does not', async ({ page }) => {
+  const step = (attrs: string) => `<main data-screen="drill" data-autoadvance ${attrs}><h1>Sigh</h1><p>Breathe in</p></main>`;
+  expect((await violations(page, step(''), 'hands-free')).length).toBeGreaterThan(0);
+  expect(await violations(page, step('data-hands-free'), 'hands-free')).toEqual([]);
+  expect(await violations(page, screen(PRIMARY + '<p>Step 2 of 4</p>'), 'hands-free')).toEqual([]);
 });
 
 test('rules ignore markup outside [data-screen]', async ({ page }) => {

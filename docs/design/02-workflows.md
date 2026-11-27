@@ -191,7 +191,7 @@ Entry: a card on Today from 3 days before the next cycle starts, and Plan → "N
 - Primary action = the next undone item, in order: a due lesson first, then the workout in the morning, otherwise top of list. Priority override: pending justification (J7) blocks; next cycle unapproved and starting within 1 day → primary after today's items are done.
 - Tapping a workout row opens a preview sheet (exercises, intervals, "How?" per exercise).
 
-**Workout HUD** (P12)
+**Workout HUD** (P12, P15 hands-free: the screen stays on until the workout ends)
 
 ```
 ┌───────────────────────────────────┐
@@ -251,11 +251,11 @@ Entry: a card on Today from 3 days before the next cycle starts, and Plan → "N
 
 ### J6 — Pause drill
 
-Full-screen, voice-guided, four steps from the current methodology: **Elevate** (raise heart rate, skipped right after a workout) → **Freeze** (don't react, release jaw and shoulders) → **Sigh** (paced physiological sigh with an animated guide) → **Scenario** (one provocation scenario; choose the paused response) → log. One instruction line per step; science behind "Why?".
+Full-screen, voice-guided, four steps from the current methodology: **Elevate** (raise heart rate, skipped right after a workout) → **Freeze** (don't react, release jaw and shoulders) → **Sigh** (paced physiological sigh with an animated guide) → **Scenario** (one provocation scenario; choose the paused response) → log. One instruction line per step; science behind "Why?". Elevate, Freeze and Sigh are hands-free (P15): the screen stays on; the Scenario step needs a tap, so it isn't.
 
 ### J6b — Rest practice
 
-Full-screen, minimal: the rest kind, a slow-moving ring for the remaining time (no digits needed — this is not a glance-at-3-m context), one soft chime at the end, voice optional. Ending early logs the real duration; the item stays undone (same rule as workouts).
+Full-screen, minimal: the rest kind, a slow-moving ring for the remaining time (no digits needed — this is not a glance-at-3-m context), one soft chime at the end, voice optional. Ending early logs the real duration; the item stays undone (same rule as workouts). Hands-free while it runs (P15): the screen stays on.
 
 ### J7 — Close a missed day
 
@@ -330,7 +330,7 @@ Opens from the Today row "Learn · Downward dog" (`learn:<itemId>`), or for revi
 
 - A combination starts with "Built from: Plank · Downward dog" (each opens its review lesson).
 - The last step is a short try ("Try it 3 times, slowly"), then **Learned** logs the lesson and ticks the item.
-- Untimed: a lesson is reading and trying at your own pace, not a timed flow.
+- Untimed: a lesson is reading and trying at your own pace, not a timed flow. Not hands-free (P15): each step needs a tap, so the screen may turn off while you practise.
 
 ### J9 — Settings (gear on Progress)
 

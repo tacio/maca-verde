@@ -126,7 +126,7 @@ export function DrillScreen({ from, afterWorkout }: { from: DrillStep; afterWork
     ) : undefined;
 
   return (
-    <FullScreen screen="drill" title="Pause drill" onClose={close} footer={footer} autoAdvance={timed}>
+    <FullScreen screen="drill" title="Pause drill" onClose={close} footer={footer} autoAdvance={timed} handsFree={timed}>
       <div data-step={step} className="flex flex-col gap-1 pt-2">
         <p className="text-sm font-medium tabular-nums text-ink-muted">
           Step {index + 1} of {allSteps.length}

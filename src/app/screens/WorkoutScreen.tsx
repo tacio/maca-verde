@@ -34,7 +34,8 @@ import {
 import { useApp } from '../AppContext';
 import { findPlanItem } from '../items';
 import { useBackGuard, useNav } from '../nav';
-import { useClockMs, useWakeLock } from '../timers';
+import { useClockMs } from '../timers';
+import { useHandsFree } from '../../ui/handsFree';
 import { scaledRoutine } from '../today';
 import { MissingItem } from './MissingItem';
 
@@ -88,7 +89,7 @@ function Hud({ item, routine, start }: { item: WorkoutItem; routine: WorkoutRout
   const leaving = useRef<'finish' | 'end' | null>(null);
   const exercises = routine.exercises.length;
 
-  useWakeLock(!finished);
+  const handsFree = useHandsFree(!finished);
 
   const leave = (final: Run, how: 'finish' | 'end') => {
     if (leaving.current) return;
@@ -170,6 +171,7 @@ function Hud({ item, routine, start }: { item: WorkoutItem; routine: WorkoutRout
   return (
     <div
       data-screen="workout"
+      {...handsFree}
       data-phase={p.kind}
       className={cx('flex min-h-dvh w-full flex-col transition-colors duration-base ease-calm', TONE[tone].screen)}
     >
